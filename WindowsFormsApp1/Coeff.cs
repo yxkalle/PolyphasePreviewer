@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace WindowsFormsApp1
 {
@@ -20,8 +21,8 @@ namespace WindowsFormsApp1
       this.d = D / 128f;
     }
 
-    public Coeff(IEnumerable<short> s) : 
-      this(s.ElementAtOrDefault(0), s.ElementAtOrDefault(1), s.ElementAtOrDefault(2), s.ElementAtOrDefault(3))
+    public Coeff(IEnumerable<short> e) : 
+      this(e.ElementAtOrDefault(0), e.ElementAtOrDefault(1), e.ElementAtOrDefault(2), e.ElementAtOrDefault(3))
     {
     }
 
@@ -41,51 +42,28 @@ namespace WindowsFormsApp1
     public static Coeff operator *(Coeff c, float v)
     {
       return new Coeff(
-        Clip(c.a * v, -1f, 1f),
-        Clip(c.b * v, -1f, 1f),
-        Clip(c.c * v, -1f, 1f),
-        Clip(c.d * v, -1f, 1f));
+        Clamp(c.a * v, -1f, 1f),
+        Clamp(c.b * v, -1f, 1f),
+        Clamp(c.c * v, -1f, 1f),
+        Clamp(c.d * v, -1f, 1f));
     }
 
     public static int operator *(Coeff c, Color[] p)
     {
-      byte r, g, b;
+      var r = Clamp(p[0].R * c.A + p[1].R * c.B + p[2].R * c.C + p[3].R * c.D);
+      var g = Clamp(p[0].G * c.A + p[1].G * c.B + p[2].G * c.C + p[3].G * c.D);
+      var b = Clamp(p[0].B * c.A + p[1].B * c.B + p[2].B * c.C + p[3].B * c.D);
 
-      var rr = p[0].R * c.A + p[1].R * c.B + p[2].R * c.C + p[3].R * c.D;
-      var gg = p[0].G * c.A + p[1].G * c.B + p[2].G * c.C + p[3].G * c.D;
-      var bb = p[0].B * c.A + p[1].B * c.B + p[2].B * c.C + p[3].B * c.D;
-
-      if (rr < 0)
-        r = 0;
-      else if (rr >= 0x8000)
-        r = 0xff;
-      else
-        r = (byte)(rr >> 7);
-
-      if (gg < 0)
-        g = 0;
-      else if (gg >= 0x8000)
-        g = 0xff;
-      else
-        g = (byte)(gg >> 7);
-
-      if (bb < 0)
-        b = 0;
-      else if (bb >= 0x8000)
-        b = 0xff;
-      else
-        b = (byte)(bb >> 7);
-
-      return BitConverter.ToInt32(new[] { b, g, r, (byte)0xff }, 0);
+      return BitConverter.ToInt32(new byte[] { b, g, r, 0xff }, 0);
     }
 
     public static Coeff operator +(Coeff c1, Coeff c2)
     {
       return new Coeff(
-        Clip(c1.a + c2.a, -1f, 1f),
-        Clip(c1.b + c2.b, -1f, 1f),
-        Clip(c1.c + c2.c, -1f, 1f),
-        Clip(c1.d + c2.d, -1f, 1f));
+        Clamp(c1.a + c2.a, -1f, 1f),
+        Clamp(c1.b + c2.b, -1f, 1f),
+        Clamp(c1.c + c2.c, -1f, 1f),
+        Clamp(c1.d + c2.d, -1f, 1f));
     }
 
     public int Sum()
@@ -93,7 +71,19 @@ namespace WindowsFormsApp1
       return A + B + C + D;
     }
 
-    private static float Clip(float v, float min, float max)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte Clamp(int v)
+    {
+      if (v < 0)
+        return 0;
+
+      if (v >= 0x8000)
+        return 0xff;
+
+      return (byte)(v >> 7);
+    }
+
+    private static float Clamp(float v, float min, float max)
     {
       return Min(Max(v, min), max);
     }

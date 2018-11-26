@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace WindowsFormsApp1
@@ -23,7 +24,7 @@ namespace WindowsFormsApp1
     public Form1()
     {
       InitializeComponent();
-      timer1.Interval = 1000;
+      timer1.Interval = 250;
       UpdateImage();
     }
 
@@ -104,15 +105,13 @@ namespace WindowsFormsApp1
       return !(CompareCoeffArrays(hCoeffs, oldH) && CompareCoeffArrays(vCoeffs, oldV));
     }
 
-    private Image ScaleImage(Image sourceImage)
+    private Bitmap ScaleImage(Bitmap sourceImage)
     {
       var outputImage = new Bitmap(sourceImage);
       outputImage.RotateFlip(RotateFlipType.Rotate90FlipX);
       outputImage = ScaleImage(outputImage, vCoeffs, yScale);
       outputImage.RotateFlip(RotateFlipType.Rotate270FlipY);
       outputImage = ScaleImage(outputImage, hCoeffs, xScale);
-
-      progressBar1.Hide();
 
       return outputImage;
     }
@@ -129,17 +128,16 @@ namespace WindowsFormsApp1
         BitmapData srcData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
         BitmapData dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
 
-        progressBar1.Value = 0;
-        progressBar1.Maximum = dstData.Height;
-        progressBar1.Visible = true;
-
         unsafe
         {
           int* srcPointer = (int*)srcData.Scan0;
-          int* dstPointer = (int*)dstData.Scan0;
+          var inputWidth = input.Width;
 
-          for (var y = 0; y < dstData.Height; y++)
+          Parallel.For(0, dstData.Height, y =>
           {
+            int* dstPointer = (int*)(dstData.Scan0);
+            dstPointer += y * dstData.Width;
+
             for (var x = 0; x < dstData.Width; x++)
             {
               var xx = x / scale;
@@ -147,24 +145,21 @@ namespace WindowsFormsApp1
 
               var t0 = Max((int)xx - 1, 0);
               var t1 = (int)xx;
-              var t2 = Min((int)xx + 1, input.Width - 1);
-              var t3 = Min((int)xx + 2, input.Width - 1);
+              var t2 = Min((int)xx + 1, inputWidth - 1);
+              var t3 = Min((int)xx + 2, inputWidth - 1);
 
               var pixels = new[]
               {
-                Color.FromArgb(srcPointer[t0 + y * input.Width]),
-                Color.FromArgb(srcPointer[t1 + y * input.Width]),
-                Color.FromArgb(srcPointer[t2 + y * input.Width]),
-                Color.FromArgb(srcPointer[t3 + y * input.Width])
+                Color.FromArgb(srcPointer[t0 + y * inputWidth]),
+                Color.FromArgb(srcPointer[t1 + y * inputWidth]),
+                Color.FromArgb(srcPointer[t2 + y * inputWidth]),
+                Color.FromArgb(srcPointer[t3 + y * inputWidth])
               };
 
               dstPointer[0] = c * pixels;
               dstPointer++;
             }
-
-            progressBar1.PerformStep();
-            progressBar1.Update();
-          }
+          });
         }
 
         output.UnlockBits(dstData);

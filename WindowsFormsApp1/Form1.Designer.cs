@@ -39,7 +39,6 @@
       this.label2 = new System.Windows.Forms.Label();
       this.button1 = new System.Windows.Forms.Button();
       this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-      this.progressBar1 = new System.Windows.Forms.ProgressBar();
       this.checkBox1 = new System.Windows.Forms.CheckBox();
       this.button2 = new System.Windows.Forms.Button();
       ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -175,17 +174,6 @@
       this.openFileDialog1.FileName = "openFileDialog1";
       this.openFileDialog1.Filter = "Image files|*.png;*.bmp;*.gif;*.jpg;*.jpeg";
       // 
-      // progressBar1
-      // 
-      this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-      this.progressBar1.Location = new System.Drawing.Point(719, 436);
-      this.progressBar1.Name = "progressBar1";
-      this.progressBar1.Size = new System.Drawing.Size(141, 23);
-      this.progressBar1.Step = 1;
-      this.progressBar1.TabIndex = 9;
-      this.progressBar1.Visible = false;
-      // 
       // checkBox1
       // 
       this.checkBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
@@ -219,7 +207,6 @@
       this.ClientSize = new System.Drawing.Size(1113, 471);
       this.Controls.Add(this.button2);
       this.Controls.Add(this.checkBox1);
-      this.Controls.Add(this.progressBar1);
       this.Controls.Add(this.button1);
       this.Controls.Add(this.label2);
       this.Controls.Add(this.label1);
@@ -249,7 +236,6 @@
     private System.Windows.Forms.Label label2;
     private System.Windows.Forms.Button button1;
     private System.Windows.Forms.OpenFileDialog openFileDialog1;
-    private System.Windows.Forms.ProgressBar progressBar1;
     private System.Windows.Forms.CheckBox checkBox1;
     private System.Windows.Forms.Button button2;
   }
