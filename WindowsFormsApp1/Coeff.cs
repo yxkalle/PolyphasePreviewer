@@ -114,10 +114,10 @@ namespace WindowsFormsApp1
         return false;
 
       return 
-        A.Equals(other.A) && 
-        B.Equals(other.B) && 
-        C.Equals(other.C) && 
-        D.Equals(other.D);
+        A == other.A && 
+        B == other.B && 
+        C == other.C && 
+        D == other.D;
     }
 
     public short A;

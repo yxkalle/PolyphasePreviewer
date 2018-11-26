@@ -16,6 +16,8 @@ namespace WindowsFormsApp1
     private float xScale;
     private float yScale;
 
+    private bool isChanged;
+
     private Bitmap image = null;
 
     public Form1()
@@ -27,8 +29,6 @@ namespace WindowsFormsApp1
 
     private void UpdateImage()
     {
-      var isChanged = false;
-
       if (GetCoeffs())
         isChanged = true;
 
@@ -40,6 +40,7 @@ namespace WindowsFormsApp1
         Cursor = Cursors.WaitCursor;
         pictureBox1.Image = ScaleImage(image ?? Resource.testImage);
         Cursor = Cursors.Default;
+        isChanged = false;
       }
     }
 
@@ -67,7 +68,7 @@ namespace WindowsFormsApp1
       vCoeffs = new Coeff[16];
 
       var lines = text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-        .Select(l => l.Trim()).Where(l => l.Length > 0 && !l[0].Equals('#'));
+        .Select(l => l.Trim()).Where(l => l.Length > 0 && l[0] != '#');
 
       short nn = 0;
       var lineIndex = 0;
@@ -235,7 +236,7 @@ namespace WindowsFormsApp1
 
     private void textBox1_KeyDown(object sender, KeyEventArgs e)
     {
-      if (e.KeyData.Equals(Keys.Control | Keys.A))
+      if (e.KeyData == (Keys.Control | Keys.A))
       {
         textBox1.SelectAll();
         e.Handled = e.SuppressKeyPress = true;
@@ -258,6 +259,7 @@ namespace WindowsFormsApp1
         }
         finally
         {
+          isChanged = true; // force update
           timer1.Stop();
           timer1.Start();
         }
@@ -315,12 +317,14 @@ namespace WindowsFormsApp1
       if (checkBox1.Checked)
       {
         button2.Enabled = false;
+        isChanged = true; // force update
         UpdateImage();
       }
     }
 
     private void button2_Click_1(object sender, EventArgs e)
     {
+      isChanged = true; // force update
       UpdateImage();
     }
 
@@ -328,7 +332,7 @@ namespace WindowsFormsApp1
     {
       MouseEventArgs mouseEvent = (MouseEventArgs)e;
 
-      if (mouseEvent.Button.Equals(MouseButtons.Right))
+      if (mouseEvent.Button == MouseButtons.Right)
         Clipboard.SetImage(pictureBox1.Image);
     }
   }
