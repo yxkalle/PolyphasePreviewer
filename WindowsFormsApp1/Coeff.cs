@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace WindowsFormsApp1
 {
-  class Coeff
+  class Coeff : IEquatable<Coeff>
   {
     public Coeff(short a, short b, short c, short d)
     {
@@ -106,6 +106,18 @@ namespace WindowsFormsApp1
     private static float Max(float v1, float v2)
     {
       return v1 > v2 ? v1 : v2;
+    }
+
+    public bool Equals(Coeff other)
+    {
+      if (other == null)
+        return false;
+
+      return 
+        A.Equals(other.A) && 
+        B.Equals(other.B) && 
+        C.Equals(other.C) && 
+        D.Equals(other.D);
     }
 
     public short A;

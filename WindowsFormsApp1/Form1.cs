@@ -21,16 +21,18 @@ namespace WindowsFormsApp1
     public Form1()
     {
       InitializeComponent();
-      timer1.Interval = 500;
+      timer1.Interval = 1000;
       UpdateImage();
     }
 
     private void UpdateImage()
     {
       Cursor = Cursors.WaitCursor;
-      GetCoeffs();
-      GetScale();
-      pictureBox1.Image = ScaleImage(image ?? Resource.testImage);
+      if (GetCoeffs())
+      {
+        GetScale();
+        pictureBox1.Image = ScaleImage(image ?? Resource.testImage);
+      }
       Cursor = Cursors.Default;
     }
 
@@ -40,21 +42,26 @@ namespace WindowsFormsApp1
       yScale = (float)numericUpDown2.Value;
     }
 
-    private void GetCoeffs()
+    private bool GetCoeffs()
     {
       var text = textBox1.Text;
+      var oldV = vCoeffs?.Clone() as Coeff[];
+      var oldH = hCoeffs?.Clone() as Coeff[];
+
       hCoeffs = new Coeff[16];
       vCoeffs = new Coeff[16];
 
       var lines = text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-        .Select(l => l.Trim()).Where(l => l.Length > 0 && l[0] != '#');
+        .Select(l => l.Trim()).Where(l => l.Length > 0 && !l[0].Equals('#'));
 
       short nn = 0;
       var lineIndex = 0;
 
       foreach (var line in lines)
       {
-        var numbers = line.Split(new[] { ',' }, 4).Where(n => short.TryParse(n, out nn)).Select(n => nn);
+        var numbers = line.Split(new[] { ',' }, 4)
+          .Where(n => short.TryParse(n, out nn))
+          .Select(n => nn);
 
         if (numbers.Count() == 0)
           continue;
@@ -65,7 +72,7 @@ namespace WindowsFormsApp1
           vCoeffs[lineIndex - 16] = new Coeff(numbers);
 
         if (++lineIndex >= 32)
-          return;
+          break;
       }
 
       while (lineIndex < 32)
@@ -77,6 +84,8 @@ namespace WindowsFormsApp1
 
         lineIndex++;
       }
+
+      return !(CompareCoeffArrays(hCoeffs, oldH) && CompareCoeffArrays(vCoeffs, oldV));
     }
 
     private Image ScaleImage(Image sourceImage)
@@ -149,6 +158,21 @@ namespace WindowsFormsApp1
       }
     }
 
+    private bool CompareCoeffArrays(Coeff[] a, Coeff[] b)
+    {
+      if ((a == null && b == null) || (a.Length == 0 && b.Length == 0))
+        return true;
+
+      if ((a == null && b != null) || (a != null && b == null))
+        return false;
+
+      for (var i = 0; i < a.Length; i++)
+        if (!a[i].Equals(b[i]))
+          return false;
+
+      return true;
+    }
+
     private static Coeff GetPreciseValueOf(Coeff[] c, float v)
     {
       var p = v * c.Length;
@@ -167,17 +191,6 @@ namespace WindowsFormsApp1
     {
       var p = v * coeffs.Length;
       return coeffs[(int)p];
-    }
-
-    private static byte ClipByte(float v)
-    {
-      if (v < 0f)
-        return 0;
-
-      if (v >= 256f)
-        return 0xff;
-
-      return (byte)v;
     }
 
     private static int Min(int v1, int v2)
@@ -207,7 +220,7 @@ namespace WindowsFormsApp1
 
     private void textBox1_KeyDown(object sender, KeyEventArgs e)
     {
-      if (e.KeyData == (Keys.Control | Keys.A))
+      if (e.KeyData.Equals(Keys.Control | Keys.A))
       {
         textBox1.SelectAll();
         e.Handled = e.SuppressKeyPress = true;
