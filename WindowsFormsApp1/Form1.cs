@@ -27,19 +27,34 @@ namespace WindowsFormsApp1
 
     private void UpdateImage()
     {
-      Cursor = Cursors.WaitCursor;
+      var isChanged = false;
+
       if (GetCoeffs())
+        isChanged = true;
+
+      if (GetScale())
+        isChanged = true;
+
+      if (isChanged)
       {
-        GetScale();
+        Cursor = Cursors.WaitCursor;
         pictureBox1.Image = ScaleImage(image ?? Resource.testImage);
+        Cursor = Cursors.Default;
       }
-      Cursor = Cursors.Default;
     }
 
-    private void GetScale()
+    private bool GetScale()
     {
-      xScale = (float)numericUpDown1.Value;
-      yScale = (float)numericUpDown2.Value;
+      var xScale = (float)numericUpDown1.Value;
+      var yScale = (float)numericUpDown2.Value;
+
+      if (xScale == this.xScale && yScale == this.yScale)
+        return false;
+
+      this.xScale = xScale;
+      this.yScale = yScale;
+
+      return true;
     }
 
     private bool GetCoeffs()
