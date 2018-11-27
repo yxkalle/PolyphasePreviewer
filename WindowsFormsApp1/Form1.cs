@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,15 +19,57 @@ namespace WindowsFormsApp1
     private float xScale;
     private float yScale;
 
+    private float brightness = 1f;
+
     private bool isChanged;
 
     private Bitmap image = null;
+
+    private string filtersPath;
 
     public Form1()
     {
       InitializeComponent();
       timer1.Interval = 250;
+      AddFilesToComboBox();
       UpdateImage();
+    }
+
+    private class ComboBoxItem
+    {
+      public ComboBoxItem(string label, string filePath)
+      {
+        Label = label;
+        FilePath = filePath;
+      }
+
+      public override string ToString()
+      {
+        return Label;
+      }
+
+      public string Label;
+      public string FilePath;
+    }
+
+    private void AddFilesToComboBox()
+    {
+      filtersPath = "Filters";
+
+      if (!Directory.Exists(filtersPath))
+        filtersPath = ".";
+
+      comboBox1.Items.Clear();
+      comboBox1.Items.AddRange(
+        Directory.GetFiles(filtersPath, "*.txt")
+        .Select(f => 
+        new ComboBoxItem(Path.GetFileNameWithoutExtension(f), Path.GetFullPath(f)))
+        .ToArray());
+
+      if (comboBox1.Items.Count == 0)
+        comboBox1.Items.Add("Sharp_Bilinear");
+
+      comboBox1.SelectedIndex = 0;
     }
 
     private void UpdateImage()
@@ -95,19 +139,21 @@ namespace WindowsFormsApp1
       while (lineIndex < 32)
       {
         if (lineIndex < 16)
-          hCoeffs[lineIndex] = new Coeff(0, 0, 0, 0);
+          hCoeffs[lineIndex] = new Coeff(0, 128, 0, 0);
         else
-          vCoeffs[lineIndex - 16] = new Coeff(0, 0, 0, 0);
+          vCoeffs[lineIndex - 16] = new Coeff(0, 128, 0, 0);
 
         lineIndex++;
       }
+
+      brightness = (hCoeffs.Sum(c => c.Sum()) + vCoeffs.Sum(c => c.Sum())) / 4096f;
 
       return !(CompareCoeffArrays(hCoeffs, oldH) && CompareCoeffArrays(vCoeffs, oldV));
     }
 
     private Bitmap ScaleImage(Bitmap sourceImage)
     {
-      var outputImage = new Bitmap(sourceImage);
+      var outputImage = new Bitmap(sourceImage); // AdjustGamma(sourceImage, brightness);
       outputImage.RotateFlip(RotateFlipType.Rotate90FlipX);
       outputImage = ScaleImage(outputImage, vCoeffs, yScale);
       outputImage.RotateFlip(RotateFlipType.Rotate270FlipY);
@@ -167,6 +213,36 @@ namespace WindowsFormsApp1
 
         return new Bitmap(output);
       }
+    }
+
+    // Perform gamma correction on the image.
+    private Bitmap AdjustGamma(Image image, float gamma)
+    {
+      // Set the ImageAttributes object's gamma value.
+      ImageAttributes attributes = new ImageAttributes();
+      attributes.SetGamma(gamma);
+
+      // Draw the image onto the new bitmap
+      // while applying the new gamma value.
+      Point[] points =
+      {
+        new Point(0, 0),
+        new Point(image.Width, 0),
+        new Point(0, image.Height),
+    };
+      Rectangle rect =
+          new Rectangle(0, 0, image.Width, image.Height);
+
+      // Make the result bitmap.
+      Bitmap bm = new Bitmap(image.Width, image.Height);
+      using (Graphics gr = Graphics.FromImage(bm))
+      {
+        gr.DrawImage(image, points, rect,
+            GraphicsUnit.Pixel, attributes);
+      }
+
+      // Return the result.
+      return bm;
     }
 
     private bool CompareCoeffArrays(Coeff[] a, Coeff[] b)
@@ -329,6 +405,55 @@ namespace WindowsFormsApp1
 
       if (mouseEvent.Button == MouseButtons.Right)
         Clipboard.SetImage(pictureBox1.Image);
+    }
+
+    private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+    {
+      if (!(comboBox1.SelectedItem is ComboBoxItem selectedItem && File.Exists(selectedItem.FilePath)))
+        return;
+
+      textBox1.Text = File.ReadAllText(selectedItem.FilePath);
+    }
+
+    private void button3_Click_1(object sender, EventArgs e)
+    {
+      string filePath;
+
+      if (!(comboBox1.SelectedItem is ComboBoxItem selectedItem && File.Exists(selectedItem.FilePath)))
+      {
+        int index = 0;
+        var fileName = comboBox1.Text;
+        if (string.IsNullOrWhiteSpace(fileName))
+          fileName = "New_Filter";
+
+        do
+        {
+          index++;
+          filePath = Path.Combine(Directory.GetCurrentDirectory(), filtersPath, $"{comboBox1.Text.Trim()}{(index > 1 ? "_" + index : "")}.txt");
+        } while (File.Exists(filePath));
+      }
+      else
+      {
+        filePath = selectedItem.FilePath;
+      }
+
+      File.WriteAllText(filePath, textBox1.Text);
+      AddFilesToComboBox();
+
+      foreach (ComboBoxItem item in comboBox1.Items)
+      {
+        if (item.FilePath == filePath)
+        {
+          comboBox1.SelectedItem = item;
+          break;
+        }
+      }
+    }
+
+    private void Form1_KeyDown(object sender, KeyEventArgs e)
+    {
+      if (e.KeyCode == (Keys.Control | Keys.S))
+        button3_Click(sender, new EventArgs());
     }
   }
 }
