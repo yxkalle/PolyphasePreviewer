@@ -24,6 +24,7 @@ namespace WindowsFormsApp1
     private bool isChanged;
 
     private Bitmap image = null;
+    private string imageName = null;
 
     private string filtersPath;
 
@@ -322,11 +323,14 @@ namespace WindowsFormsApp1
         {
           using (var stream = openFileDialog1.OpenFile())
             image = new Bitmap(stream);
+
+          imageName = Path.GetFileNameWithoutExtension(openFileDialog1.FileName).Trim();
         }
         catch (ArgumentException)
         {
           MessageBox.Show(this, "The selected file was not a valid image.", "Invalid image file", MessageBoxButtons.OK, MessageBoxIcon.Error);
           image = null;
+          imageName = null;
         }
         finally
         {
@@ -454,6 +458,23 @@ namespace WindowsFormsApp1
     {
       if (e.KeyCode == (Keys.Control | Keys.S))
         button3_Click(sender, new EventArgs());
+    }
+
+    private void button4_Click(object sender, EventArgs e)
+    {
+      int index = 0;
+      var fileName = string.IsNullOrEmpty(imageName) ? comboBox1.Text : $"{imageName}_{comboBox1.Text}";
+      var directory = Path.Combine(Directory.GetCurrentDirectory(), "Previews");
+
+      if (!Directory.Exists(directory))
+        Directory.CreateDirectory(directory);
+
+      var filePath = Path.Combine(directory, $"{fileName}.png");
+
+      isChanged = true;
+      UpdateImage();
+
+      pictureBox1.Image.Save(filePath);
     }
   }
 }

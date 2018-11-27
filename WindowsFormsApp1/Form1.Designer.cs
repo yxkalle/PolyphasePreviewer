@@ -58,7 +58,7 @@
       this.textBox1.Multiline = true;
       this.textBox1.Name = "textBox1";
       this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-      this.textBox1.Size = new System.Drawing.Size(450, 390);
+      this.textBox1.Size = new System.Drawing.Size(450, 419);
       this.textBox1.TabIndex = 0;
       this.textBox1.Text = resources.GetString("textBox1.Text");
       this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
@@ -69,6 +69,7 @@
       this.pictureBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+      this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
       this.pictureBox1.Location = new System.Drawing.Point(468, 12);
       this.pictureBox1.Name = "pictureBox1";
       this.pictureBox1.Size = new System.Drawing.Size(633, 418);
@@ -164,9 +165,9 @@
       // button1
       // 
       this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-      this.button1.Location = new System.Drawing.Point(468, 436);
+      this.button1.Location = new System.Drawing.Point(468, 437);
       this.button1.Name = "button1";
-      this.button1.Size = new System.Drawing.Size(80, 23);
+      this.button1.Size = new System.Drawing.Size(75, 23);
       this.button1.TabIndex = 6;
       this.button1.Text = "Load image";
       this.button1.UseVisualStyleBackColor = true;
@@ -183,7 +184,7 @@
       this.checkBox1.AutoSize = true;
       this.checkBox1.Checked = true;
       this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
-      this.checkBox1.Location = new System.Drawing.Point(640, 440);
+      this.checkBox1.Location = new System.Drawing.Point(736, 441);
       this.checkBox1.Name = "checkBox1";
       this.checkBox1.Size = new System.Drawing.Size(73, 17);
       this.checkBox1.TabIndex = 10;
@@ -195,9 +196,9 @@
       // 
       this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.button2.Enabled = false;
-      this.button2.Location = new System.Drawing.Point(554, 436);
+      this.button2.Location = new System.Drawing.Point(655, 437);
       this.button2.Name = "button2";
-      this.button2.Size = new System.Drawing.Size(80, 23);
+      this.button2.Size = new System.Drawing.Size(75, 23);
       this.button2.TabIndex = 11;
       this.button2.Text = "Update";
       this.button2.UseVisualStyleBackColor = true;
@@ -208,14 +209,14 @@
       this.comboBox1.FormattingEnabled = true;
       this.comboBox1.Location = new System.Drawing.Point(13, 13);
       this.comboBox1.Name = "comboBox1";
-      this.comboBox1.Size = new System.Drawing.Size(449, 21);
+      this.comboBox1.Size = new System.Drawing.Size(368, 21);
+      this.comboBox1.Sorted = true;
       this.comboBox1.TabIndex = 12;
       this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
       // 
       // button3
       // 
-      this.button3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-      this.button3.Location = new System.Drawing.Point(13, 436);
+      this.button3.Location = new System.Drawing.Point(387, 12);
       this.button3.Name = "button3";
       this.button3.Size = new System.Drawing.Size(75, 23);
       this.button3.TabIndex = 13;
@@ -226,13 +227,13 @@
       // button4
       // 
       this.button4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-      this.button4.Location = new System.Drawing.Point(95, 436);
+      this.button4.Location = new System.Drawing.Point(549, 437);
       this.button4.Name = "button4";
-      this.button4.Size = new System.Drawing.Size(75, 23);
+      this.button4.Size = new System.Drawing.Size(100, 23);
       this.button4.TabIndex = 14;
-      this.button4.Text = "Save as...";
+      this.button4.Text = "Save preview";
       this.button4.UseVisualStyleBackColor = true;
-      this.button4.Visible = false;
+      this.button4.Click += new System.EventHandler(this.button4_Click);
       // 
       // Form1
       // 
