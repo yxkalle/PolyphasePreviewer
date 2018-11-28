@@ -3,6 +3,6 @@
 
 ![](https://i.imgur.com/janhI6f.png)
 
-Put your filters in the same directory as the executable (.exe) or in a sub folder named 'Filters'.
+Put your filters in the same directory as the executable (.exe) or in a sub directory called 'Filters'.
 
 Preview images are saved in a sub directory called 'Previews'.
