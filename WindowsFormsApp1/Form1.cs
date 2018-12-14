@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -188,12 +189,12 @@ namespace WindowsFormsApp1
             for (var x = 0; x < dstData.Width; x++)
             {
               var xx = x / scale;
-              var c = GetValueOf(coeffs, xx % 1f);
+              var c = GetValueOf(coeffs, (xx + 0.5f) % 1f);
 
-              var t0 = Max((int)xx - 1, 0);
-              var t1 = (int)xx;
-              var t2 = Min((int)xx + 1, inputWidth - 1);
-              var t3 = Min((int)xx + 2, inputWidth - 1);
+              var t0 = Max((int)(xx - 1.5f), 0);
+              var t1 = Max((int)(xx - 0.5f), 0);
+              var t2 = Min((int)(xx + 0.5f), inputWidth - 1);
+              var t3 = Min((int)(xx + 1.5f), inputWidth - 1);
 
               var pixels = new[]
               {
@@ -261,31 +262,20 @@ namespace WindowsFormsApp1
       return true;
     }
 
-    private static Coeff GetPreciseValueOf(Coeff[] c, float v)
-    {
-      var p = v * c.Length;
-
-      var q = p % 1f;
-
-      var r = (int)p;
-
-      var a = c[r];
-      var b = c[r + 1 == c.Length ? c.Length - 1 : r + 1];
-
-      return a * (1 - q) + b * q;
-    }
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Coeff GetValueOf(Coeff[] coeffs, float v)
     {
       var p = v * coeffs.Length;
       return coeffs[(int)p];
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int Min(int v1, int v2)
     {
       return v1 < v2 ? v1 : v2;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int Max(int v1, int v2)
     {
       return v1 > v2 ? v1 : v2;
@@ -462,7 +452,6 @@ namespace WindowsFormsApp1
 
     private void button4_Click(object sender, EventArgs e)
     {
-      int index = 0;
       var fileName = string.IsNullOrEmpty(imageName) ? comboBox1.Text : $"{imageName}_{comboBox1.Text}";
       var directory = Path.Combine(Directory.GetCurrentDirectory(), "Previews");
 
