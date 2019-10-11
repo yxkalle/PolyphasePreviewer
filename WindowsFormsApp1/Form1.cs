@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -14,18 +11,15 @@ namespace WindowsFormsApp1
 {
   public partial class Form1 : Form
   {
-    private Coeff[] vCoeffs;
-    private Coeff[] hCoeffs;
+    private Coeff[] vCoeffs, hCoeffs;
 
     private float xScale;
     private float yScale;
 
-    private float brightness = 1f;
-
     private bool isChanged;
 
-    private Bitmap image = null;
-    private string imageName = null;
+    private Bitmap image;
+    private string imageName;
 
     private string filtersPath;
 
@@ -41,17 +35,17 @@ namespace WindowsFormsApp1
     {
       public ComboBoxItem(string label, string filePath)
       {
-        Label = label;
+        this.label = label;
         FilePath = filePath;
       }
 
       public override string ToString()
       {
-        return Label;
+        return label;
       }
 
-      public string Label;
-      public string FilePath;
+      private readonly string label;
+      public readonly string FilePath;
     }
 
     private void AddFilesToComboBox()
@@ -64,7 +58,7 @@ namespace WindowsFormsApp1
       comboBox1.Items.Clear();
       comboBox1.Items.AddRange(
         Directory.GetFiles(filtersPath, "*.txt")
-        .Select(f => 
+        .Select(f =>
         new ComboBoxItem(Path.GetFileNameWithoutExtension(f), Path.GetFullPath(f)))
         .ToArray());
 
@@ -93,8 +87,8 @@ namespace WindowsFormsApp1
 
     private bool GetScale()
     {
-      var xScale = (float)numericUpDown1.Value;
-      var yScale = (float)numericUpDown2.Value;
+      var xScale = (float)Math.Round(numericUpDown1.Value, numericUpDown1.DecimalPlaces);
+      var yScale = (float)Math.Round(numericUpDown2.Value, numericUpDown2.DecimalPlaces);
 
       if (xScale == this.xScale && yScale == this.yScale)
         return false;
@@ -115,7 +109,7 @@ namespace WindowsFormsApp1
       vCoeffs = new Coeff[16];
 
       var lines = text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-        .Select(l => l.Trim()).Where(l => l.Length > 0 && l[0] != '#');
+        .Select(l => l.Trim()).Where(l => l.Length > 0 && l[0] != '#'); // remove comments
 
       short nn = 0;
       var lineIndex = 0;
@@ -124,9 +118,10 @@ namespace WindowsFormsApp1
       {
         var numbers = line.Split(new[] { ',' }, 4)
           .Where(n => short.TryParse(n, out nn))
-          .Select(n => nn);
+          .Select(n => nn)
+          .ToList();
 
-        if (numbers.Count() == 0)
+        if (!numbers.Any())
           continue;
 
         if (lineIndex < 16)
@@ -140,15 +135,15 @@ namespace WindowsFormsApp1
 
       while (lineIndex < 32)
       {
+        var x = lineIndex / 8 % 2 == 0;
+        var c = new Coeff(0, x ? 1f : 0, x ? 0 : 1f, 0);
         if (lineIndex < 16)
-          hCoeffs[lineIndex] = new Coeff(0, 128, 0, 0);
+          hCoeffs[lineIndex] = c;
         else
-          vCoeffs[lineIndex - 16] = new Coeff(0, 128, 0, 0);
+          vCoeffs[lineIndex - 16] = c;
 
         lineIndex++;
       }
-
-      brightness = (hCoeffs.Sum(c => c.Sum()) + vCoeffs.Sum(c => c.Sum())) / 4096f;
 
       return !(CompareCoeffArrays(hCoeffs, oldH) && CompareCoeffArrays(vCoeffs, oldV));
     }
@@ -164,7 +159,7 @@ namespace WindowsFormsApp1
       return outputImage;
     }
 
-    private Bitmap ScaleImage(Bitmap sourceImage, Coeff[] coeffs, float scale)
+    private static Bitmap ScaleImage(Bitmap sourceImage, Coeff[] coeffs, float scale)
     {
       float outputWidth = scale * sourceImage.Width;
       float outputHeight = sourceImage.Height;
@@ -173,17 +168,17 @@ namespace WindowsFormsApp1
 
       using (var output = new Bitmap((int)outputWidth, (int)outputHeight))
       {
-        BitmapData srcData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-        BitmapData dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+        var srcData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        var dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
 
         unsafe
         {
-          int* srcPointer = (int*)srcData.Scan0;
+          var srcPointer = (int*)srcData.Scan0;
           var inputWidth = input.Width;
 
           Parallel.For(0, dstData.Height, y =>
           {
-            int* dstPointer = (int*)(dstData.Scan0);
+            var dstPointer = (int*)dstData.Scan0;
             dstPointer += y * dstData.Width;
 
             for (var x = 0; x < dstData.Width; x++)
@@ -217,42 +212,12 @@ namespace WindowsFormsApp1
       }
     }
 
-    // Perform gamma correction on the image.
-    private Bitmap AdjustGamma(Image image, float gamma)
+    private static bool CompareCoeffArrays(Coeff[] a, Coeff[] b)
     {
-      // Set the ImageAttributes object's gamma value.
-      ImageAttributes attributes = new ImageAttributes();
-      attributes.SetGamma(gamma);
+      if (a == null || a.Length == 0)
+        return b == null || b.Length == 0;
 
-      // Draw the image onto the new bitmap
-      // while applying the new gamma value.
-      Point[] points =
-      {
-        new Point(0, 0),
-        new Point(image.Width, 0),
-        new Point(0, image.Height),
-    };
-      Rectangle rect =
-          new Rectangle(0, 0, image.Width, image.Height);
-
-      // Make the result bitmap.
-      Bitmap bm = new Bitmap(image.Width, image.Height);
-      using (Graphics gr = Graphics.FromImage(bm))
-      {
-        gr.DrawImage(image, points, rect,
-            GraphicsUnit.Pixel, attributes);
-      }
-
-      // Return the result.
-      return bm;
-    }
-
-    private bool CompareCoeffArrays(Coeff[] a, Coeff[] b)
-    {
-      if ((a == null && b == null) || (a.Length == 0 && b.Length == 0))
-        return true;
-
-      if ((a == null && b != null) || (a != null && b == null))
+      if (b == null || b.Length == 0)
         return false;
 
       for (var i = 0; i < a.Length; i++)
@@ -331,50 +296,6 @@ namespace WindowsFormsApp1
       }
     }
 
-    private void button2_Click(object sender, EventArgs e)
-    {
-      ShiftRight(hCoeffs);
-      WriteCoeffs();
-    }
-
-    private void button3_Click(object sender, EventArgs e)
-    {
-      ShiftRight(vCoeffs);
-      WriteCoeffs();
-    }
-
-    private void WriteCoeffs()
-    {
-      var sb = new StringBuilder();
-
-      sb.AppendLine("# horizontal coefficients");
-
-      foreach(var c in hCoeffs)
-        sb.AppendLine($"{c.A,4},{c.B,4},{c.C,4},{c.D,4}");
-
-      sb.AppendLine();
-      sb.AppendLine("# vertical coefficients");
-
-      foreach (var c in vCoeffs)
-        sb.AppendLine($"{c.A,4},{c.B,4},{c.C,4},{c.D,4}");
-
-      textBox1.Text = sb.ToString();
-    }
-
-    private void ShiftRight(Coeff[] c)
-    {
-      var cLast = c[c.Length - 1];
-
-      for (var i = c.Length - 1; i > 0; i--)
-        c[i] = c[i - 1];
-
-      c[0] = new Coeff(cLast.D, cLast.C, cLast.B, cLast.A);
-
-      Cursor = Cursors.WaitCursor;
-      pictureBox1.Image = ScaleImage(image ?? Resource.testImage);
-      Cursor = Cursors.Default;
-    }
-
     private void checkBox1_CheckedChanged(object sender, EventArgs e)
     {
       button2.Enabled = true;
@@ -406,7 +327,9 @@ namespace WindowsFormsApp1
       if (!(comboBox1.SelectedItem is ComboBoxItem selectedItem && File.Exists(selectedItem.FilePath)))
         return;
 
-      textBox1.Text = File.ReadAllText(selectedItem.FilePath);
+      var text = File.ReadAllText(selectedItem.FilePath);
+      var rows = text.Split(new[] {Environment.NewLine, "\r", "\n"}, StringSplitOptions.None);
+      textBox1.Text = string.Join(Environment.NewLine, rows);
     }
 
     private void button3_Click_1(object sender, EventArgs e)
@@ -415,7 +338,7 @@ namespace WindowsFormsApp1
 
       if (!(comboBox1.SelectedItem is ComboBoxItem selectedItem && File.Exists(selectedItem.FilePath)))
       {
-        int index = 0;
+        var index = 0;
         var fileName = comboBox1.Text;
         if (string.IsNullOrWhiteSpace(fileName))
           fileName = "New_Filter";
@@ -423,7 +346,7 @@ namespace WindowsFormsApp1
         do
         {
           index++;
-          filePath = Path.Combine(Directory.GetCurrentDirectory(), filtersPath, $"{comboBox1.Text.Trim()}{(index > 1 ? "_" + index : "")}.txt");
+          filePath = Path.Combine(Directory.GetCurrentDirectory(), filtersPath, $"{fileName.Trim()}{(index > 1 ? "_" + index : "")}.txt");
         } while (File.Exists(filePath));
       }
       else
@@ -447,7 +370,7 @@ namespace WindowsFormsApp1
     private void Form1_KeyDown(object sender, KeyEventArgs e)
     {
       if (e.KeyCode == (Keys.Control | Keys.S))
-        button3_Click(sender, new EventArgs());
+        button3_Click_1(sender, new EventArgs());
     }
 
     private void button4_Click(object sender, EventArgs e)
