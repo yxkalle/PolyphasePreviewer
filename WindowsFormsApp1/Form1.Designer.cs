@@ -1,6 +1,6 @@
 ﻿namespace WindowsFormsApp1
 {
-  partial class Form1
+  partial class Form
   {
     /// <summary>
     /// Required designer variable.
@@ -29,118 +29,118 @@
     private void InitializeComponent()
     {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
-            this.numericUpDown2 = new System.Windows.Forms.NumericUpDown();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form));
+            this.filterTextBox = new System.Windows.Forms.TextBox();
+            this.PreviewPictureBox = new System.Windows.Forms.PictureBox();
+            this.RedrawTimer = new System.Windows.Forms.Timer(this.components);
+            this.ScaleXUpDown = new System.Windows.Forms.NumericUpDown();
+            this.ScaleYUpDown = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.button1 = new System.Windows.Forms.Button();
-            this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-            this.checkBox1 = new System.Windows.Forms.CheckBox();
-            this.button2 = new System.Windows.Forms.Button();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
-            this.button3 = new System.Windows.Forms.Button();
-            this.button4 = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
+            this.loadImageBtn = new System.Windows.Forms.Button();
+            this.OpenImageDialog = new System.Windows.Forms.OpenFileDialog();
+            this.AutomaticRedrawChkBox = new System.Windows.Forms.CheckBox();
+            this.updateBtn = new System.Windows.Forms.Button();
+            this.FilterComboBox = new System.Windows.Forms.ComboBox();
+            this.SaveBtn = new System.Windows.Forms.Button();
+            this.savePreviewBtn = new System.Windows.Forms.Button();
+            ((System.ComponentModel.ISupportInitialize)(this.PreviewPictureBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ScaleXUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ScaleYUpDown)).BeginInit();
             this.SuspendLayout();
             // 
-            // textBox1
+            // filterTextBox
             // 
-            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.filterTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
-            this.textBox1.Font = new System.Drawing.Font("Lucida Console", 12.25F);
-            this.textBox1.Location = new System.Drawing.Point(12, 40);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBox1.Size = new System.Drawing.Size(450, 419);
-            this.textBox1.TabIndex = 0;
-            this.textBox1.Text = resources.GetString("textBox1.Text");
-            this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
-            this.textBox1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBox1_KeyDown);
+            this.filterTextBox.Font = new System.Drawing.Font("Lucida Console", 12.25F);
+            this.filterTextBox.Location = new System.Drawing.Point(12, 40);
+            this.filterTextBox.Multiline = true;
+            this.filterTextBox.Name = "filterTextBox";
+            this.filterTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.filterTextBox.Size = new System.Drawing.Size(450, 419);
+            this.filterTextBox.TabIndex = 0;
+            this.filterTextBox.Text = resources.GetString("filterTextBox.Text");
+            this.filterTextBox.TextChanged += new System.EventHandler(this.FilterTextBox_TextChanged);
+            this.filterTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.FilterTextBox_KeyDown);
             // 
-            // pictureBox1
+            // PreviewPictureBox
             // 
-            this.pictureBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.PreviewPictureBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Location = new System.Drawing.Point(468, 12);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(633, 418);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pictureBox1.TabIndex = 1;
-            this.pictureBox1.TabStop = false;
-            this.pictureBox1.Click += new System.EventHandler(this.pictureBox1_Click);
+            this.PreviewPictureBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.PreviewPictureBox.Location = new System.Drawing.Point(468, 12);
+            this.PreviewPictureBox.Name = "PreviewPictureBox";
+            this.PreviewPictureBox.Size = new System.Drawing.Size(633, 418);
+            this.PreviewPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.PreviewPictureBox.TabIndex = 1;
+            this.PreviewPictureBox.TabStop = false;
+            this.PreviewPictureBox.Click += new System.EventHandler(this.PreviewPictureBox_Click);
             // 
-            // timer1
+            // RedrawTimer
             // 
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this.RedrawTimer.Tick += new System.EventHandler(this.RedrawTimer_Tick);
             // 
-            // numericUpDown1
+            // ScaleXUpDown
             // 
-            this.numericUpDown1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.numericUpDown1.DecimalPlaces = 3;
-            this.numericUpDown1.Increment = new decimal(new int[] {
+            this.ScaleXUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ScaleXUpDown.DecimalPlaces = 3;
+            this.ScaleXUpDown.Increment = new decimal(new int[] {
             1,
             0,
             0,
             65536});
-            this.numericUpDown1.Location = new System.Drawing.Point(914, 440);
-            this.numericUpDown1.Maximum = new decimal(new int[] {
+            this.ScaleXUpDown.Location = new System.Drawing.Point(914, 440);
+            this.ScaleXUpDown.Maximum = new decimal(new int[] {
             16,
             0,
             0,
             0});
-            this.numericUpDown1.Minimum = new decimal(new int[] {
+            this.ScaleXUpDown.Minimum = new decimal(new int[] {
             1,
             0,
             0,
             0});
-            this.numericUpDown1.Name = "numericUpDown1";
-            this.numericUpDown1.Size = new System.Drawing.Size(60, 20);
-            this.numericUpDown1.TabIndex = 2;
-            this.numericUpDown1.Value = new decimal(new int[] {
+            this.ScaleXUpDown.Name = "ScaleXUpDown";
+            this.ScaleXUpDown.Size = new System.Drawing.Size(60, 20);
+            this.ScaleXUpDown.TabIndex = 2;
+            this.ScaleXUpDown.Value = new decimal(new int[] {
             45,
             0,
             0,
             65536});
-            this.numericUpDown1.ValueChanged += new System.EventHandler(this.textBox1_TextChanged);
+            this.ScaleXUpDown.ValueChanged += new System.EventHandler(this.FilterTextBox_TextChanged);
             // 
-            // numericUpDown2
+            // ScaleYUpDown
             // 
-            this.numericUpDown2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.numericUpDown2.DecimalPlaces = 3;
-            this.numericUpDown2.Increment = new decimal(new int[] {
+            this.ScaleYUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ScaleYUpDown.DecimalPlaces = 3;
+            this.ScaleYUpDown.Increment = new decimal(new int[] {
             1,
             0,
             0,
             65536});
-            this.numericUpDown2.Location = new System.Drawing.Point(1041, 440);
-            this.numericUpDown2.Maximum = new decimal(new int[] {
+            this.ScaleYUpDown.Location = new System.Drawing.Point(1041, 440);
+            this.ScaleYUpDown.Maximum = new decimal(new int[] {
             16,
             0,
             0,
             0});
-            this.numericUpDown2.Minimum = new decimal(new int[] {
+            this.ScaleYUpDown.Minimum = new decimal(new int[] {
             1,
             0,
             0,
             0});
-            this.numericUpDown2.Name = "numericUpDown2";
-            this.numericUpDown2.Size = new System.Drawing.Size(60, 20);
-            this.numericUpDown2.TabIndex = 3;
-            this.numericUpDown2.Value = new decimal(new int[] {
+            this.ScaleYUpDown.Name = "ScaleYUpDown";
+            this.ScaleYUpDown.Size = new System.Drawing.Size(60, 20);
+            this.ScaleYUpDown.TabIndex = 3;
+            this.ScaleYUpDown.Value = new decimal(new int[] {
             45,
             0,
             0,
             65536});
-            this.numericUpDown2.ValueChanged += new System.EventHandler(this.textBox1_TextChanged);
+            this.ScaleYUpDown.ValueChanged += new System.EventHandler(this.FilterTextBox_TextChanged);
             // 
             // label1
             // 
@@ -162,103 +162,102 @@
             this.label2.TabIndex = 5;
             this.label2.Text = "Y scale";
             // 
-            // button1
+            // loadImageBtn
             // 
-            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button1.Location = new System.Drawing.Point(468, 437);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 6;
-            this.button1.Text = "Load image";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.loadImageBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.loadImageBtn.Location = new System.Drawing.Point(468, 437);
+            this.loadImageBtn.Name = "loadImageBtn";
+            this.loadImageBtn.Size = new System.Drawing.Size(75, 23);
+            this.loadImageBtn.TabIndex = 6;
+            this.loadImageBtn.Text = "Load image";
+            this.loadImageBtn.UseVisualStyleBackColor = true;
+            this.loadImageBtn.Click += new System.EventHandler(this.LoadImageBtn_Click);
             // 
-            // openFileDialog1
+            // OpenImageDialog
             // 
-            this.openFileDialog1.FileName = "openFileDialog1";
-            this.openFileDialog1.Filter = "Image files|*.png;*.bmp;*.gif;*.jpg;*.jpeg";
+            this.OpenImageDialog.Filter = "Image files|*.png;*.bmp;*.gif;*.jpg;*.jpeg";
             // 
-            // checkBox1
+            // AutomaticRedrawChkBox
             // 
-            this.checkBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.checkBox1.AutoSize = true;
-            this.checkBox1.Checked = true;
-            this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox1.Location = new System.Drawing.Point(736, 441);
-            this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(108, 17);
-            this.checkBox1.TabIndex = 10;
-            this.checkBox1.Text = "Automatic redraw";
-            this.checkBox1.UseVisualStyleBackColor = true;
-            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            this.AutomaticRedrawChkBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.AutomaticRedrawChkBox.AutoSize = true;
+            this.AutomaticRedrawChkBox.Checked = true;
+            this.AutomaticRedrawChkBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.AutomaticRedrawChkBox.Location = new System.Drawing.Point(736, 441);
+            this.AutomaticRedrawChkBox.Name = "AutomaticRedrawChkBox";
+            this.AutomaticRedrawChkBox.Size = new System.Drawing.Size(108, 17);
+            this.AutomaticRedrawChkBox.TabIndex = 10;
+            this.AutomaticRedrawChkBox.Text = "Automatic redraw";
+            this.AutomaticRedrawChkBox.UseVisualStyleBackColor = true;
+            this.AutomaticRedrawChkBox.CheckedChanged += new System.EventHandler(this.AutomaticRedrawChkBox_CheckedChanged);
             // 
-            // button2
+            // updateBtn
             // 
-            this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button2.Enabled = false;
-            this.button2.Location = new System.Drawing.Point(655, 437);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
-            this.button2.TabIndex = 11;
-            this.button2.Text = "Update";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click_1);
+            this.updateBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.updateBtn.Enabled = false;
+            this.updateBtn.Location = new System.Drawing.Point(655, 437);
+            this.updateBtn.Name = "updateBtn";
+            this.updateBtn.Size = new System.Drawing.Size(75, 23);
+            this.updateBtn.TabIndex = 11;
+            this.updateBtn.Text = "Update";
+            this.updateBtn.UseVisualStyleBackColor = true;
+            this.updateBtn.Click += new System.EventHandler(this.UpdateBtn_Click);
             // 
-            // comboBox1
+            // FilterComboBox
             // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(13, 13);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(368, 21);
-            this.comboBox1.Sorted = true;
-            this.comboBox1.TabIndex = 12;
-            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
+            this.FilterComboBox.FormattingEnabled = true;
+            this.FilterComboBox.Location = new System.Drawing.Point(13, 13);
+            this.FilterComboBox.Name = "FilterComboBox";
+            this.FilterComboBox.Size = new System.Drawing.Size(368, 21);
+            this.FilterComboBox.Sorted = true;
+            this.FilterComboBox.TabIndex = 12;
             // 
-            // button3
+            // SaveBtn
             // 
-            this.button3.Location = new System.Drawing.Point(387, 12);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(75, 23);
-            this.button3.TabIndex = 13;
-            this.button3.Text = "Save";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click_1);
+            this.SaveBtn.Location = new System.Drawing.Point(387, 12);
+            this.SaveBtn.Name = "SaveBtn";
+            this.SaveBtn.Size = new System.Drawing.Size(75, 23);
+            this.SaveBtn.TabIndex = 13;
+            this.SaveBtn.Text = "Save";
+            this.SaveBtn.UseVisualStyleBackColor = true;
+            this.SaveBtn.Click += new System.EventHandler(this.SaveBtn_Click);
             // 
-            // button4
+            // savePreviewBtn
             // 
-            this.button4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button4.Location = new System.Drawing.Point(549, 437);
-            this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(100, 23);
-            this.button4.TabIndex = 14;
-            this.button4.Text = "Save preview";
-            this.button4.UseVisualStyleBackColor = true;
-            this.button4.Click += new System.EventHandler(this.button4_Click);
+            this.savePreviewBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.savePreviewBtn.Location = new System.Drawing.Point(549, 437);
+            this.savePreviewBtn.Name = "savePreviewBtn";
+            this.savePreviewBtn.Size = new System.Drawing.Size(100, 23);
+            this.savePreviewBtn.TabIndex = 14;
+            this.savePreviewBtn.Text = "Save preview";
+            this.savePreviewBtn.UseVisualStyleBackColor = true;
+            this.savePreviewBtn.Click += new System.EventHandler(this.SavePreviewBtn_Click);
             // 
-            // Form1
+            // Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1113, 471);
-            this.Controls.Add(this.button4);
-            this.Controls.Add(this.button3);
-            this.Controls.Add(this.comboBox1);
-            this.Controls.Add(this.button2);
-            this.Controls.Add(this.checkBox1);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.savePreviewBtn);
+            this.Controls.Add(this.SaveBtn);
+            this.Controls.Add(this.FilterComboBox);
+            this.Controls.Add(this.updateBtn);
+            this.Controls.Add(this.AutomaticRedrawChkBox);
+            this.Controls.Add(this.loadImageBtn);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.numericUpDown2);
-            this.Controls.Add(this.numericUpDown1);
-            this.Controls.Add(this.pictureBox1);
-            this.Controls.Add(this.textBox1);
-            this.Name = "Form1";
+            this.Controls.Add(this.ScaleYUpDown);
+            this.Controls.Add(this.ScaleXUpDown);
+            this.Controls.Add(this.PreviewPictureBox);
+            this.Controls.Add(this.filterTextBox);
+            this.Name = "Form";
             this.ShowIcon = false;
             this.Text = "Polyphase Previewer";
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).EndInit();
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form_FormClosing);
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form_KeyDown);
+            ((System.ComponentModel.ISupportInitialize)(this.PreviewPictureBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ScaleXUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ScaleYUpDown)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -266,20 +265,20 @@
 
     #endregion
 
-    private System.Windows.Forms.TextBox textBox1;
-    private System.Windows.Forms.PictureBox pictureBox1;
-    private System.Windows.Forms.Timer timer1;
-    private System.Windows.Forms.NumericUpDown numericUpDown1;
-    private System.Windows.Forms.NumericUpDown numericUpDown2;
+    private System.Windows.Forms.TextBox filterTextBox;
+    private System.Windows.Forms.PictureBox PreviewPictureBox;
+    private System.Windows.Forms.Timer RedrawTimer;
+    private System.Windows.Forms.NumericUpDown ScaleXUpDown;
+    private System.Windows.Forms.NumericUpDown ScaleYUpDown;
     private System.Windows.Forms.Label label1;
     private System.Windows.Forms.Label label2;
-    private System.Windows.Forms.Button button1;
-    private System.Windows.Forms.OpenFileDialog openFileDialog1;
-    private System.Windows.Forms.CheckBox checkBox1;
-    private System.Windows.Forms.Button button2;
-    private System.Windows.Forms.ComboBox comboBox1;
-    private System.Windows.Forms.Button button3;
-    private System.Windows.Forms.Button button4;
+    private System.Windows.Forms.Button loadImageBtn;
+    private System.Windows.Forms.OpenFileDialog OpenImageDialog;
+    private System.Windows.Forms.CheckBox AutomaticRedrawChkBox;
+    private System.Windows.Forms.Button updateBtn;
+    private System.Windows.Forms.ComboBox FilterComboBox;
+    private System.Windows.Forms.Button SaveBtn;
+    private System.Windows.Forms.Button savePreviewBtn;
   }
 }
 
