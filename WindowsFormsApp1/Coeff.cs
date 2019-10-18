@@ -16,7 +16,7 @@ namespace WindowsFormsApp1
             D = d;
         }
 
-        public Coeff(IEnumerable<short> e) :
+        public Coeff(ICollection<short> e) :
           this(e.ElementAtOrDefault(0), e.ElementAtOrDefault(1), e.ElementAtOrDefault(2), e.ElementAtOrDefault(3))
         {
         }

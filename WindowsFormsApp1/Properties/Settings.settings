@@ -17,5 +17,8 @@
     <Setting Name="AutomaticRedraw" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="Gamma" Type="System.Decimal" Scope="User">
+      <Value Profile="(Default)">2.2</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

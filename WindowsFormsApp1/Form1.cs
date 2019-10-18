@@ -11,6 +11,8 @@ namespace WindowsFormsApp1
 {
     public partial class Form : System.Windows.Forms.Form
     {
+        private const decimal DefaultGamma = 2.2m;
+
         private Coeff[] vCoeffs, hCoeffs;
 
         private decimal scaleX;
@@ -23,12 +25,16 @@ namespace WindowsFormsApp1
 
         private string filtersPath;
 
+        private decimal gamma;
+        private readonly byte[] gammaLut = new byte[256];
+
         public Form()
         {
             InitializeComponent();
-            RedrawTimer.Interval = 250;
             AddFiltersToComboBox();
             FilterComboBox.SelectedIndexChanged += FilterComboBox_SelectedIndexChanged;
+
+            GammaUpDown.Value = Properties.Settings.Default.Gamma;
 
             LoadLastImage();
 
@@ -118,6 +124,9 @@ namespace WindowsFormsApp1
 
         private void UpdateImage()
         {
+            if (GetGamma())             
+                isChanged = true;
+
             if (GetCoeffs())
                 isChanged = true;
 
@@ -201,13 +210,27 @@ namespace WindowsFormsApp1
 
         private Bitmap ScaleImage(Bitmap sourceImage)
         {
-            var outputImage = new Bitmap(sourceImage);
+            var outputImage = ApplyGammaLut(sourceImage, gammaLut);
             outputImage.RotateFlip(RotateFlipType.Rotate90FlipX);
             outputImage = ScaleImage(outputImage, vCoeffs, scaleY);
             outputImage.RotateFlip(RotateFlipType.Rotate270FlipY);
             outputImage = ScaleImage(outputImage, hCoeffs, scaleX);
 
             return outputImage;
+        }
+
+        private void UpdateGammaLut(decimal gammaCorrection)
+        {
+            var len = gammaLut.Length;
+            for (var i = 0; i < len; i++)
+                gammaLut[i] = Clamp((int)(255.0 * Math.Pow(i / (double)(len - 1), 1 / (double)gammaCorrection) + .5));
+        }
+
+        private static byte Clamp(int v)
+        {
+            if (v < 0) return 0;
+            if (v > 255) return 255;
+            return (byte)v;
         }
 
         private static Bitmap ScaleImage(Bitmap sourceImage, Coeff[] coeffs, decimal scale)
@@ -254,6 +277,44 @@ namespace WindowsFormsApp1
                             };
 
                             dstPointer[0] = c * pixels;
+                            dstPointer++;
+                        }
+                    });
+                }
+
+                output.UnlockBits(dstData);
+                input.UnlockBits(srcData);
+
+                return new Bitmap(output);
+            }
+        }
+
+        private static Bitmap ApplyGammaLut(Bitmap input, byte[] gammaLut)
+        {
+            var inputWidth = input.Width;
+            var inputHeight = input.Height;
+
+            using (var output = new Bitmap(inputWidth, inputHeight))
+            {
+                var srcData = input.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                var dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+
+                unsafe
+                {
+                    var srcPointer = (int*)srcData.Scan0;
+                    if (srcPointer == null)
+                        throw new NullReferenceException();
+
+                    Parallel.For(0, dstData.Height, y =>
+                    {
+                        var dstPointer = (int*)dstData.Scan0;
+                        dstPointer += y * dstData.Width;
+
+                        for (var x = 0; x < dstData.Width; x++)
+                        {
+                            var c = Color.FromArgb(srcPointer[x + y * inputWidth]);
+
+                            dstPointer[0] = BitConverter.ToInt32(new byte[] { gammaLut[c.B], gammaLut[c.G], gammaLut[c.R], 0xff }, 0);
                             dstPointer++;
                         }
                     });
@@ -436,6 +497,18 @@ namespace WindowsFormsApp1
         private void Form_FormClosing(object sender, FormClosingEventArgs e)
         {
             Properties.Settings.Default.Save();
+        }
+
+        private bool GetGamma()
+        {
+            var oldGamma = gamma;
+            gamma = GammaUpDown.Value;
+            if (gamma == oldGamma)
+                return false;
+
+            UpdateGammaLut(DefaultGamma / gamma);
+            Properties.Settings.Default.Gamma = gamma;
+            return true;
         }
 
         private void SavePreviewBtn_Click(object sender, EventArgs e)
