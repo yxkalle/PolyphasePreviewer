@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace WindowsFormsApp1.Properties {
+namespace PolyphasePreviewer.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -85,13 +85,13 @@ namespace WindowsFormsApp1.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("2.2")]
-        public decimal Gamma {
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string LastGammaLut {
             get {
-                return ((decimal)(this["Gamma"]));
+                return ((string)(this["LastGammaLut"]));
             }
             set {
-                this["Gamma"] = value;
+                this["LastGammaLut"] = value;
             }
         }
     }

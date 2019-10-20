@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace WindowsFormsApp1
+namespace PolyphasePreviewer
 {
     public partial class Form : System.Windows.Forms.Form
     {
-        private const decimal DefaultGamma = 2.2m;
-
         private Coeff[] vCoeffs, hCoeffs;
 
         private decimal scaleX;
@@ -24,21 +23,25 @@ namespace WindowsFormsApp1
         private string imageName;
 
         private string filtersPath;
+        private string gammaLutsPath;
 
-        private decimal gamma;
         private readonly byte[] gammaLut = new byte[256];
 
         public Form()
         {
             InitializeComponent();
-            AddFiltersToComboBox();
-            FilterComboBox.SelectedIndexChanged += FilterComboBox_SelectedIndexChanged;
 
-            GammaUpDown.Value = Properties.Settings.Default.Gamma;
+            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+
+            AddFiltersToComboBox();
+            AddGammaLutsToComboBox();
+
+            FilterComboBox.SelectedIndexChanged += FilterComboBox_SelectedIndexChanged;
+            GammaLutComboBox.SelectedIndexChanged += GammaLutComboBox_SelectedIndexChanged;
 
             LoadLastImage();
-
             LoadLastFilter();
+            LoadLastGammaLut();
 
             AutomaticRedrawChkBox.Checked = Properties.Settings.Default.AutomaticRedraw;
 
@@ -51,15 +54,30 @@ namespace WindowsFormsApp1
         private void LoadLastFilter()
         {
             var lastFilter = Properties.Settings.Default.LastFilter;
-            if (!string.IsNullOrEmpty(lastFilter))
-            {
-                foreach (var cbi in FilterComboBox.Items.Cast<ComboBoxItem>())
-                {
-                    if (cbi.FilePath != lastFilter) continue;
+            if (string.IsNullOrEmpty(lastFilter)) return;
 
-                    FilterComboBox.SelectedItem = cbi;
-                    break;
-                }
+            foreach (var cbi in FilterComboBox.Items.Cast<ComboBoxItem>())
+            {
+                if (cbi.FilePath != lastFilter) continue;
+
+                FilterComboBox.SelectedItem = cbi;
+                break;
+            }
+        }
+
+        private void LoadLastGammaLut()
+        {
+            var lastGammaLut = Properties.Settings.Default.LastGammaLut;
+
+            if (string.IsNullOrEmpty(lastGammaLut))
+                SetDefaultGammaLut();
+
+            foreach (var cbi in GammaLutComboBox.Items.Cast<ComboBoxItem>())
+            {
+                if (cbi.FilePath != lastGammaLut) continue;
+
+                GammaLutComboBox.SelectedItem = cbi;
+                break;
             }
         }
 
@@ -67,21 +85,19 @@ namespace WindowsFormsApp1
         {
             var lastImage = Properties.Settings.Default.LastImage;
 
-            if (!string.IsNullOrEmpty(lastImage) &&
-                File.Exists(lastImage))
-            {
-                try
-                {
-                    using (var stream = new FileStream(lastImage, FileMode.Open, FileAccess.Read))
-                        image = new Bitmap(stream);
+            if (string.IsNullOrEmpty(lastImage) || !File.Exists(lastImage)) return;
 
-                    imageName = Path.GetFileNameWithoutExtension(OpenImageDialog.FileName)?.Trim();
-                }
-                catch
-                {
-                    image = Resource.testImage;
-                    imageName = null;
-                }
+            try
+            {
+                using (var stream = new FileStream(lastImage, FileMode.Open, FileAccess.Read))
+                    image = new Bitmap(stream);
+
+                imageName = Path.GetFileNameWithoutExtension(OpenImageDialog.FileName)?.Trim();
+            }
+            catch
+            {
+                image = Resource.testImage;
+                imageName = null;
             }
         }
 
@@ -122,24 +138,38 @@ namespace WindowsFormsApp1
             FilterComboBox.SelectedIndex = 0;
         }
 
+        private void AddGammaLutsToComboBox()
+        {
+            gammaLutsPath = "Gamma";
+
+            if (!Directory.Exists(gammaLutsPath))
+                return;
+
+            GammaLutComboBox.Items.Clear();
+            GammaLutComboBox.Items.AddRange(
+                Directory.GetFiles(gammaLutsPath, "*.txt")
+                    .Select(g =>
+                        (object)new ComboBoxItem(Path.GetFileNameWithoutExtension(g), Path.GetFullPath(g)))
+                    .ToArray());
+
+            GammaLutComboBox.Items.Add(new ComboBoxItem("No gamma adjustment", null));
+            GammaLutComboBox.SelectedIndex = 0;
+        }
+
         private void UpdateImage()
         {
-            if (GetGamma())             
-                isChanged = true;
-
             if (GetCoeffs())
                 isChanged = true;
 
             if (GetScale())
                 isChanged = true;
 
-            if (isChanged)
-            {
-                Cursor = Cursors.WaitCursor;
-                PreviewPictureBox.Image = ScaleImage(image ?? Resource.testImage);
-                Cursor = Cursors.Default;
-                isChanged = false;
-            }
+            if (!isChanged) return;
+
+            Cursor = Cursors.WaitCursor;
+            PreviewPictureBox.Image = ScaleImage(image ?? Resource.testImage);
+            Cursor = Cursors.Default;
+            isChanged = false;
         }
 
         private bool GetScale()
@@ -217,13 +247,6 @@ namespace WindowsFormsApp1
             outputImage = ScaleImage(outputImage, hCoeffs, scaleX);
 
             return outputImage;
-        }
-
-        private void UpdateGammaLut(decimal gammaCorrection)
-        {
-            var len = gammaLut.Length;
-            for (var i = 0; i < len; i++)
-                gammaLut[i] = Clamp((int)(255.0 * Math.Pow(i / (double)(len - 1), 1 / (double)gammaCorrection) + .5));
         }
 
         private static byte Clamp(int v)
@@ -415,6 +438,8 @@ namespace WindowsFormsApp1
             Properties.Settings.Default.AutomaticRedraw = AutomaticRedrawChkBox.Checked;
         }
 
+
+
         private void FilterTextBox_TextChanged(object sender, EventArgs e)
         {
             if (!AutomaticRedrawChkBox.Checked)
@@ -480,9 +505,42 @@ namespace WindowsFormsApp1
             Properties.Settings.Default.LastFilter = selectedItem.FilePath;
         }
 
+        private void GammaLutComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            isChanged = true;
+
+            if (GammaLutComboBox.SelectedIndex == 0)
+            {
+                SetDefaultGammaLut();
+                Properties.Settings.Default.LastGammaLut = null;
+                FilterTextBox_TextChanged(sender, e);
+                return;
+            }
+
+            if (!(GammaLutComboBox.SelectedItem is ComboBoxItem selectedItem && File.Exists(selectedItem.FilePath)))
+                return;
+
+            var text = File.ReadAllText(selectedItem.FilePath);
+            var rows = text.Split(new[] { Environment.NewLine, "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim()).Where(l => l.Length > 0 && l[0] != '#') // remove comments
+                .ToArray();
+
+            for (var i = 0; i < 256 && i < rows.Length; i++)
+                gammaLut[i] = Clamp(byte.TryParse(rows[i], NumberStyles.Integer, null, out var value) ? value: 0);
+
+            Properties.Settings.Default.LastGammaLut = selectedItem.FilePath;
+            FilterTextBox_TextChanged(sender, e);
+        }
+
+        private void SetDefaultGammaLut()
+        {
+            for (var i = 0; i < 256; i++)
+                gammaLut[i] = (byte) i; // default LUT
+        }
+
         private void PreviewPictureBox_Click(object sender, EventArgs e)
         {
-            MouseEventArgs mouseEvent = (MouseEventArgs)e;
+            var mouseEvent = (MouseEventArgs)e;
 
             if (mouseEvent.Button == MouseButtons.Right)
                 Clipboard.SetImage(PreviewPictureBox.Image);
@@ -497,18 +555,6 @@ namespace WindowsFormsApp1
         private void Form_FormClosing(object sender, FormClosingEventArgs e)
         {
             Properties.Settings.Default.Save();
-        }
-
-        private bool GetGamma()
-        {
-            var oldGamma = gamma;
-            gamma = GammaUpDown.Value;
-            if (gamma == oldGamma)
-                return false;
-
-            UpdateGammaLut(DefaultGamma / gamma);
-            Properties.Settings.Default.Gamma = gamma;
-            return true;
         }
 
         private void SavePreviewBtn_Click(object sender, EventArgs e)

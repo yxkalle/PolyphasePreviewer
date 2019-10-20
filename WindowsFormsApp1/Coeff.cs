@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace WindowsFormsApp1
+namespace PolyphasePreviewer
 {
     class Coeff : IEquatable<Coeff>
     {

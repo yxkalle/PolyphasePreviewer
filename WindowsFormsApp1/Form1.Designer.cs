@@ -1,4 +1,7 @@
-﻿namespace WindowsFormsApp1
+﻿using System.Drawing;
+using System.Windows.Forms;
+
+namespace PolyphasePreviewer
 {
   partial class Form
   {
@@ -31,7 +34,6 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form));
             this.filterTextBox = new System.Windows.Forms.TextBox();
-            this.PreviewPictureBox = new System.Windows.Forms.PictureBox();
             this.RedrawTimer = new System.Windows.Forms.Timer(this.components);
             this.ScaleXUpDown = new System.Windows.Forms.NumericUpDown();
             this.ScaleYUpDown = new System.Windows.Forms.NumericUpDown();
@@ -45,11 +47,11 @@
             this.SaveBtn = new System.Windows.Forms.Button();
             this.savePreviewBtn = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
-            this.GammaUpDown = new System.Windows.Forms.NumericUpDown();
-            ((System.ComponentModel.ISupportInitialize)(this.PreviewPictureBox)).BeginInit();
+            this.GammaLutComboBox = new System.Windows.Forms.ComboBox();
+            this.PreviewPictureBox = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.ScaleXUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ScaleYUpDown)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.GammaUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.PreviewPictureBox)).BeginInit();
             this.SuspendLayout();
             // 
             // filterTextBox
@@ -61,25 +63,11 @@
             this.filterTextBox.Multiline = true;
             this.filterTextBox.Name = "filterTextBox";
             this.filterTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.filterTextBox.Size = new System.Drawing.Size(450, 440);
+            this.filterTextBox.Size = new System.Drawing.Size(450, 514);
             this.filterTextBox.TabIndex = 0;
             this.filterTextBox.Text = resources.GetString("filterTextBox.Text");
             this.filterTextBox.TextChanged += new System.EventHandler(this.FilterTextBox_TextChanged);
             this.filterTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.FilterTextBox_KeyDown);
-            // 
-            // PreviewPictureBox
-            // 
-            this.PreviewPictureBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.PreviewPictureBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.PreviewPictureBox.Location = new System.Drawing.Point(468, 12);
-            this.PreviewPictureBox.Name = "PreviewPictureBox";
-            this.PreviewPictureBox.Size = new System.Drawing.Size(582, 411);
-            this.PreviewPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.PreviewPictureBox.TabIndex = 1;
-            this.PreviewPictureBox.TabStop = false;
-            this.PreviewPictureBox.Click += new System.EventHandler(this.PreviewPictureBox_Click);
             // 
             // RedrawTimer
             // 
@@ -88,14 +76,14 @@
             // 
             // ScaleXUpDown
             // 
-            this.ScaleXUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ScaleXUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.ScaleXUpDown.DecimalPlaces = 3;
             this.ScaleXUpDown.Increment = new decimal(new int[] {
             1,
             0,
             0,
             65536});
-            this.ScaleXUpDown.Location = new System.Drawing.Point(876, 461);
+            this.ScaleXUpDown.Location = new System.Drawing.Point(288, 592);
             this.ScaleXUpDown.Maximum = new decimal(new int[] {
             16,
             0,
@@ -118,14 +106,14 @@
             // 
             // ScaleYUpDown
             // 
-            this.ScaleYUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ScaleYUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.ScaleYUpDown.DecimalPlaces = 3;
             this.ScaleYUpDown.Increment = new decimal(new int[] {
             1,
             0,
             0,
             65536});
-            this.ScaleYUpDown.Location = new System.Drawing.Point(990, 461);
+            this.ScaleYUpDown.Location = new System.Drawing.Point(402, 592);
             this.ScaleYUpDown.Maximum = new decimal(new int[] {
             16,
             0,
@@ -148,9 +136,9 @@
             // 
             // label1
             // 
-            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(828, 463);
+            this.label1.Location = new System.Drawing.Point(240, 594);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(42, 13);
             this.label1.TabIndex = 4;
@@ -158,9 +146,9 @@
             // 
             // label2
             // 
-            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(942, 463);
+            this.label2.Location = new System.Drawing.Point(354, 594);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(42, 13);
             this.label2.TabIndex = 5;
@@ -169,7 +157,7 @@
             // loadImageBtn
             // 
             this.loadImageBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.loadImageBtn.Location = new System.Drawing.Point(468, 429);
+            this.loadImageBtn.Location = new System.Drawing.Point(12, 560);
             this.loadImageBtn.Name = "loadImageBtn";
             this.loadImageBtn.Size = new System.Drawing.Size(100, 23);
             this.loadImageBtn.TabIndex = 6;
@@ -187,7 +175,7 @@
             this.AutomaticRedrawChkBox.AutoSize = true;
             this.AutomaticRedrawChkBox.Checked = true;
             this.AutomaticRedrawChkBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.AutomaticRedrawChkBox.Location = new System.Drawing.Point(574, 462);
+            this.AutomaticRedrawChkBox.Location = new System.Drawing.Point(118, 593);
             this.AutomaticRedrawChkBox.Name = "AutomaticRedrawChkBox";
             this.AutomaticRedrawChkBox.Size = new System.Drawing.Size(108, 17);
             this.AutomaticRedrawChkBox.TabIndex = 10;
@@ -199,7 +187,7 @@
             // 
             this.updateBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.updateBtn.Enabled = false;
-            this.updateBtn.Location = new System.Drawing.Point(574, 429);
+            this.updateBtn.Location = new System.Drawing.Point(12, 589);
             this.updateBtn.Name = "updateBtn";
             this.updateBtn.Size = new System.Drawing.Size(75, 23);
             this.updateBtn.TabIndex = 11;
@@ -229,9 +217,9 @@
             // savePreviewBtn
             // 
             this.savePreviewBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.savePreviewBtn.Location = new System.Drawing.Point(468, 458);
+            this.savePreviewBtn.Location = new System.Drawing.Point(118, 560);
             this.savePreviewBtn.Name = "savePreviewBtn";
-            this.savePreviewBtn.Size = new System.Drawing.Size(100, 23);
+            this.savePreviewBtn.Size = new System.Drawing.Size(108, 23);
             this.savePreviewBtn.TabIndex = 14;
             this.savePreviewBtn.Text = "Save preview";
             this.savePreviewBtn.UseVisualStyleBackColor = true;
@@ -239,50 +227,45 @@
             // 
             // label3
             // 
-            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(723, 463);
+            this.label3.Location = new System.Drawing.Point(240, 565);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(43, 13);
+            this.label3.Size = new System.Drawing.Size(67, 13);
             this.label3.TabIndex = 16;
-            this.label3.Text = "Gamma";
+            this.label3.Text = "Gamma LUT";
             // 
-            // GammaUpDown
+            // GammaLutComboBox
             // 
-            this.GammaUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.GammaUpDown.DecimalPlaces = 2;
-            this.GammaUpDown.Increment = new decimal(new int[] {
-            5,
-            0,
-            0,
-            131072});
-            this.GammaUpDown.Location = new System.Drawing.Point(772, 461);
-            this.GammaUpDown.Maximum = new decimal(new int[] {
-            50,
-            0,
-            0,
-            65536});
-            this.GammaUpDown.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            65536});
-            this.GammaUpDown.Name = "GammaUpDown";
-            this.GammaUpDown.Size = new System.Drawing.Size(50, 20);
-            this.GammaUpDown.TabIndex = 17;
-            this.GammaUpDown.Value = new decimal(new int[] {
-            22,
-            0,
-            0,
-            65536});
-            this.GammaUpDown.ValueChanged += new System.EventHandler(this.FilterTextBox_TextChanged);
+            this.GammaLutComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.GammaLutComboBox.FormattingEnabled = true;
+            this.GammaLutComboBox.Location = new System.Drawing.Point(313, 562);
+            this.GammaLutComboBox.Name = "GammaLutComboBox";
+            this.GammaLutComboBox.Size = new System.Drawing.Size(149, 21);
+            this.GammaLutComboBox.Sorted = true;
+            this.GammaLutComboBox.TabIndex = 18;
+            // 
+            // PreviewPictureBox
+            // 
+            this.PreviewPictureBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.PreviewPictureBox.BackColor = System.Drawing.Color.Black;
+            this.PreviewPictureBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.PreviewPictureBox.Location = new System.Drawing.Point(468, 12);
+            this.PreviewPictureBox.Name = "PreviewPictureBox";
+            this.PreviewPictureBox.Size = new System.Drawing.Size(600, 600);
+            this.PreviewPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.PreviewPictureBox.TabIndex = 1;
+            this.PreviewPictureBox.TabStop = false;
+            this.PreviewPictureBox.Click += new System.EventHandler(this.PreviewPictureBox_Click);
             // 
             // Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1062, 492);
-            this.Controls.Add(this.GammaUpDown);
+            this.ClientSize = new System.Drawing.Size(1080, 623);
+            this.Controls.Add(this.GammaLutComboBox);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.savePreviewBtn);
             this.Controls.Add(this.SaveBtn);
@@ -297,14 +280,12 @@
             this.Controls.Add(this.PreviewPictureBox);
             this.Controls.Add(this.filterTextBox);
             this.Name = "Form";
-            this.ShowIcon = false;
-            this.Text = "Polyphase Previewer";
+            this.Text = "MiSTer Polyphase Previewer";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form_FormClosing);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form_KeyDown);
-            ((System.ComponentModel.ISupportInitialize)(this.PreviewPictureBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ScaleXUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ScaleYUpDown)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.GammaUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.PreviewPictureBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -327,7 +308,7 @@
     private System.Windows.Forms.Button SaveBtn;
     private System.Windows.Forms.Button savePreviewBtn;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.NumericUpDown GammaUpDown;
+        private System.Windows.Forms.ComboBox GammaLutComboBox;
     }
 }
 
