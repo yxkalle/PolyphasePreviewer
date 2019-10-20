@@ -242,7 +242,6 @@ namespace PolyphasePreviewer
             this.GammaLutComboBox.Location = new System.Drawing.Point(313, 562);
             this.GammaLutComboBox.Name = "GammaLutComboBox";
             this.GammaLutComboBox.Size = new System.Drawing.Size(149, 21);
-            this.GammaLutComboBox.Sorted = true;
             this.GammaLutComboBox.TabIndex = 18;
             // 
             // PreviewPictureBox

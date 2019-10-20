@@ -25,7 +25,7 @@ namespace PolyphasePreviewer
         private string filtersPath;
         private string gammaLutsPath;
 
-        private readonly byte[] gammaLut = new byte[256];
+        private readonly byte[,] gammaLut = new byte[3, 256];
 
         public Form()
         {
@@ -146,13 +146,13 @@ namespace PolyphasePreviewer
                 return;
 
             GammaLutComboBox.Items.Clear();
+            GammaLutComboBox.Items.Add(new ComboBoxItem("No gamma adjustment", null));
             GammaLutComboBox.Items.AddRange(
                 Directory.GetFiles(gammaLutsPath, "*.txt")
                     .Select(g =>
                         (object)new ComboBoxItem(Path.GetFileNameWithoutExtension(g), Path.GetFullPath(g)))
                     .ToArray());
 
-            GammaLutComboBox.Items.Add(new ComboBoxItem("No gamma adjustment", null));
             GammaLutComboBox.SelectedIndex = 0;
         }
 
@@ -312,7 +312,7 @@ namespace PolyphasePreviewer
             }
         }
 
-        private static Bitmap ApplyGammaLut(Bitmap input, byte[] gammaLut)
+        private static Bitmap ApplyGammaLut(Bitmap input, byte[,] gammaLut)
         {
             var inputWidth = input.Width;
             var inputHeight = input.Height;
@@ -337,7 +337,7 @@ namespace PolyphasePreviewer
                         {
                             var c = Color.FromArgb(srcPointer[x + y * inputWidth]);
 
-                            dstPointer[0] = BitConverter.ToInt32(new byte[] { gammaLut[c.B], gammaLut[c.G], gammaLut[c.R], 0xff }, 0);
+                            dstPointer[0] = BitConverter.ToInt32(new byte[] { gammaLut[2, c.B], gammaLut[1, c.G], gammaLut[0, c.R], 0xff }, 0);
                             dstPointer++;
                         }
                     });
@@ -526,7 +526,19 @@ namespace PolyphasePreviewer
                 .ToArray();
 
             for (var i = 0; i < 256 && i < rows.Length; i++)
-                gammaLut[i] = Clamp(byte.TryParse(rows[i], NumberStyles.Integer, null, out var value) ? value: 0);
+            {
+                var values = rows[i].Split(',');
+                if (values.Length == 3)
+                {
+                    gammaLut[0, i] = Clamp(byte.TryParse(values[0].Trim(), NumberStyles.Integer, null, out var r) ? r : 0);
+                    gammaLut[1, i] = Clamp(byte.TryParse(values[0].Trim(), NumberStyles.Integer, null, out var g) ? g : 0);
+                    gammaLut[2, i] = Clamp(byte.TryParse(values[0].Trim(), NumberStyles.Integer, null, out var b) ? b : 0);
+                }
+                else
+                {
+                    gammaLut[0, i] = gammaLut[1, i] = gammaLut[2, i] = Clamp(byte.TryParse(rows[i].Trim(), NumberStyles.Integer, null, out var value) ? value : 0);
+                }
+            }
 
             Properties.Settings.Default.LastGammaLut = selectedItem.FilePath;
             FilterTextBox_TextChanged(sender, e);
@@ -535,7 +547,11 @@ namespace PolyphasePreviewer
         private void SetDefaultGammaLut()
         {
             for (var i = 0; i < 256; i++)
-                gammaLut[i] = (byte) i; // default LUT
+            {
+                gammaLut[0, i] = (byte) i; // default LUT
+                gammaLut[1, i] = (byte) i;
+                gammaLut[2, i] = (byte) i;
+            }
         }
 
         private void PreviewPictureBox_Click(object sender, EventArgs e)
