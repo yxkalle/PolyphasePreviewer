@@ -531,8 +531,8 @@ namespace PolyphasePreviewer
                 if (values.Length == 3)
                 {
                     gammaLut[0, i] = Clamp(byte.TryParse(values[0].Trim(), NumberStyles.Integer, null, out var r) ? r : 0);
-                    gammaLut[1, i] = Clamp(byte.TryParse(values[0].Trim(), NumberStyles.Integer, null, out var g) ? g : 0);
-                    gammaLut[2, i] = Clamp(byte.TryParse(values[0].Trim(), NumberStyles.Integer, null, out var b) ? b : 0);
+                    gammaLut[1, i] = Clamp(byte.TryParse(values[1].Trim(), NumberStyles.Integer, null, out var g) ? g : 0);
+                    gammaLut[2, i] = Clamp(byte.TryParse(values[2].Trim(), NumberStyles.Integer, null, out var b) ? b : 0);
                 }
                 else
                 {
