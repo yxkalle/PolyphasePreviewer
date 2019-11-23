@@ -5,13 +5,16 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PolyphasePreviewer
 {
-    public partial class Form : System.Windows.Forms.Form
+    public partial class Form
     {
+        private const int CoeffsLength = 16;
+
         private Coeff[] vCoeffs, hCoeffs;
 
         private decimal scaleX;
@@ -39,14 +42,11 @@ namespace PolyphasePreviewer
             FilterComboBox.SelectedIndexChanged += FilterComboBox_SelectedIndexChanged;
             GammaLutComboBox.SelectedIndexChanged += GammaLutComboBox_SelectedIndexChanged;
 
-            LoadLastImage();
             LoadLastFilter();
             LoadLastGammaLut();
+            LoadLastImage();
 
-            AutomaticRedrawChkBox.Checked = Properties.Settings.Default.AutomaticRedraw;
-
-            ScaleXUpDown.Value = Properties.Settings.Default.ScaleX;
-            ScaleYUpDown.Value = Properties.Settings.Default.ScaleY;
+            FilterTextBox.Select(FilterTextBox.TextLength, 0);
 
             UpdateImage();
         }
@@ -77,8 +77,10 @@ namespace PolyphasePreviewer
                 if (cbi.FilePath != lastGammaLut) continue;
 
                 GammaLutComboBox.SelectedItem = cbi;
-                break;
+                return;
             }
+
+            SetDefaultGammaLut();
         }
 
         private void LoadLastImage()
@@ -142,18 +144,18 @@ namespace PolyphasePreviewer
         {
             gammaLutsPath = "Gamma";
 
+            GammaLutComboBox.Items.Clear();
+            GammaLutComboBox.Items.Add(new ComboBoxItem("No gamma adjustment", null));
+            GammaLutComboBox.SelectedIndex = 0;
+
             if (!Directory.Exists(gammaLutsPath))
                 return;
 
-            GammaLutComboBox.Items.Clear();
-            GammaLutComboBox.Items.Add(new ComboBoxItem("No gamma adjustment", null));
             GammaLutComboBox.Items.AddRange(
                 Directory.GetFiles(gammaLutsPath, "*.txt")
                     .Select(g =>
                         (object)new ComboBoxItem(Path.GetFileNameWithoutExtension(g), Path.GetFullPath(g)))
                     .ToArray());
-
-            GammaLutComboBox.SelectedIndex = 0;
         }
 
         private void UpdateImage()
@@ -191,49 +193,70 @@ namespace PolyphasePreviewer
 
         private bool GetCoeffs()
         {
-            var text = filterTextBox.Text;
+            var numberOfErrors = 0;
+            var numberOfWarnings = 0;
+
+            var text = FilterTextBox.Text;
             var oldV = vCoeffs?.Clone() as Coeff[];
             var oldH = hCoeffs?.Clone() as Coeff[];
 
-            hCoeffs = new Coeff[16];
-            vCoeffs = new Coeff[16];
+            hCoeffs = new Coeff[CoeffsLength];
+            vCoeffs = new Coeff[CoeffsLength];
 
-            var lines = text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-              .Select(l => l.Trim()).Where(l => l.Length > 0 && l[0] != '#'); // remove comments
+            var numberLines = text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+              .Select(l => l.Trim()).Where(tl => tl.Length > 0 && tl[0] != '#')
+              .ToArray(); // remove comments
 
-            short nn = 0;
+            short sn = 0;
             var lineIndex = 0;
 
-            foreach (var line in lines)
+            foreach (var l in numberLines)
             {
-                var numbers = line.Split(new[] { ',' }, 4)
-                  .Where(n => short.TryParse(n, out nn))
-                  .Select(n => nn)
-                  .ToList();
+                var numbers = l.Split(new[] { ',' }, 4)
+                  .Where(n => short.TryParse(n, out sn))
+                  .Select(n => sn)
+                  .ToArray();
 
-                if (!numbers.Any())
-                    continue;
+                if (numbers.Length == 4)
+                {
+                    var newCoeff = new Coeff(numbers);
 
-                if (lineIndex < 16)
-                    hCoeffs[lineIndex] = new Coeff(numbers);
+                    if (newCoeff.Sum() != 128)
+                        numberOfWarnings++;
+
+                    if (lineIndex < CoeffsLength)
+                        hCoeffs[lineIndex] = newCoeff;
+                    else
+                        vCoeffs[lineIndex - CoeffsLength] = newCoeff;
+                }
                 else
-                    vCoeffs[lineIndex - 16] = new Coeff(numbers);
+                {
+                    numberOfErrors++;
+                    if (lineIndex < CoeffsLength)
+                        hCoeffs[lineIndex] = new Coeff();
+                    else
+                        vCoeffs[lineIndex - CoeffsLength] = new Coeff();
+                }
 
-                if (++lineIndex >= 32)
+                if (++lineIndex >= CoeffsLength * 2)
                     break;
             }
 
-            while (lineIndex < 32)
+            if (numberLines.Length < CoeffsLength * 2)
+                numberOfErrors += CoeffsLength * 2 - numberLines.Length;
+            else
+                numberOfErrors += numberLines.Length - CoeffsLength * 2;
+
+            for (; lineIndex < CoeffsLength * 2; lineIndex++) // fill remaining empty spots
             {
-                var x = lineIndex / 8 % 2 == 0;
-                var c = new Coeff(0, x ? 1f : 0, x ? 0 : 1f, 0);
-                if (lineIndex < 16)
+                var c = new Coeff();
+                if (lineIndex < CoeffsLength)
                     hCoeffs[lineIndex] = c;
                 else
-                    vCoeffs[lineIndex - 16] = c;
-
-                lineIndex++;
+                    vCoeffs[lineIndex - CoeffsLength] = c;
             }
+
+            ErrorsAndWarningsLabel.Text = $@"{(numberOfErrors > 0 ? numberOfErrors + " error(s)" : "")}{(numberOfErrors > 0 && numberOfWarnings > 0 ? ", " : "")}{(numberOfWarnings > 0 ? numberOfWarnings + " warnings(s)" : "")}";
 
             return !(CompareCoeffArrays(hCoeffs, oldH) && CompareCoeffArrays(vCoeffs, oldV));
         }
@@ -241,6 +264,7 @@ namespace PolyphasePreviewer
         private Bitmap ScaleImage(Bitmap sourceImage)
         {
             var outputImage = ApplyGammaLut(sourceImage, gammaLut);
+
             outputImage.RotateFlip(RotateFlipType.Rotate90FlipX);
             outputImage = ScaleImage(outputImage, vCoeffs, scaleY);
             outputImage.RotateFlip(RotateFlipType.Rotate270FlipY);
@@ -249,10 +273,10 @@ namespace PolyphasePreviewer
             return outputImage;
         }
 
-        private static byte Clamp(int v)
+        private static byte ClampToByte(int v)
         {
             if (v < 0) return 0;
-            if (v > 255) return 255;
+            if (v > 255) return 0xff;
             return (byte)v;
         }
 
@@ -337,7 +361,7 @@ namespace PolyphasePreviewer
                         {
                             var c = Color.FromArgb(srcPointer[x + y * inputWidth]);
 
-                            dstPointer[0] = BitConverter.ToInt32(new byte[] { gammaLut[2, c.B], gammaLut[1, c.G], gammaLut[0, c.R], 0xff }, 0);
+                            dstPointer[0] = BitConverter.ToInt32(new[] { gammaLut[2, c.B], gammaLut[1, c.G], gammaLut[0, c.R], (byte)0xff }, 0);
                             dstPointer++;
                         }
                     });
@@ -359,8 +383,10 @@ namespace PolyphasePreviewer
                 return false;
 
             for (var i = 0; i < a.Length; i++)
-                if (!a[i].Equals(b[i]))
+            {
+                if (a[i]?.Equals(b[i]) != true)
                     return false;
+            }
 
             return true;
         }
@@ -411,7 +437,9 @@ namespace PolyphasePreviewer
                 }
                 catch (ArgumentException)
                 {
-                    MessageBox.Show(this, @"The selected file was not a valid image.", @"Invalid image file", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, @"The selected file was not a valid image.", @"Invalid image file",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
                     image = null;
                     imageName = null;
                 }
@@ -453,7 +481,7 @@ namespace PolyphasePreviewer
         {
             if (e.KeyData == (Keys.Control | Keys.A))
             {
-                filterTextBox.SelectAll();
+                FilterTextBox.SelectAll();
                 e.Handled = e.SuppressKeyPress = true;
             }
         }
@@ -480,7 +508,10 @@ namespace PolyphasePreviewer
                 filePath = selectedItem.FilePath;
             }
 
-            File.WriteAllText(filePath, filterTextBox.Text);
+            File.WriteAllText(filePath, FilterTextBox.Text.Replace(Environment.NewLine, "\n"), Encoding.UTF8);
+
+            FilterComboBox.SelectedIndexChanged -= FilterComboBox_SelectedIndexChanged;
+
             AddFiltersToComboBox();
 
             foreach (ComboBoxItem item in FilterComboBox.Items)
@@ -491,6 +522,8 @@ namespace PolyphasePreviewer
                     break;
                 }
             }
+
+            FilterComboBox.SelectedIndexChanged += FilterComboBox_SelectedIndexChanged;
         }
 
         private void FilterComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -500,7 +533,7 @@ namespace PolyphasePreviewer
 
             var text = File.ReadAllText(selectedItem.FilePath);
             var rows = text.Split(new[] { Environment.NewLine, "\r", "\n" }, StringSplitOptions.None);
-            filterTextBox.Text = string.Join(Environment.NewLine, rows);
+            FilterTextBox.Text = string.Join(Environment.NewLine, rows);
 
             Properties.Settings.Default.LastFilter = selectedItem.FilePath;
         }
@@ -530,13 +563,13 @@ namespace PolyphasePreviewer
                 var values = rows[i].Split(',');
                 if (values.Length == 3)
                 {
-                    gammaLut[0, i] = Clamp(byte.TryParse(values[0].Trim(), NumberStyles.Integer, null, out var r) ? r : 0);
-                    gammaLut[1, i] = Clamp(byte.TryParse(values[1].Trim(), NumberStyles.Integer, null, out var g) ? g : 0);
-                    gammaLut[2, i] = Clamp(byte.TryParse(values[2].Trim(), NumberStyles.Integer, null, out var b) ? b : 0);
+                    gammaLut[0, i] = ClampToByte(byte.TryParse(values[0].Trim(), NumberStyles.Integer, null, out var r) ? r : 0);
+                    gammaLut[1, i] = ClampToByte(byte.TryParse(values[1].Trim(), NumberStyles.Integer, null, out var g) ? g : 0);
+                    gammaLut[2, i] = ClampToByte(byte.TryParse(values[2].Trim(), NumberStyles.Integer, null, out var b) ? b : 0);
                 }
                 else
                 {
-                    gammaLut[0, i] = gammaLut[1, i] = gammaLut[2, i] = Clamp(byte.TryParse(rows[i].Trim(), NumberStyles.Integer, null, out var value) ? value : 0);
+                    gammaLut[0, i] = gammaLut[1, i] = gammaLut[2, i] = ClampToByte(byte.TryParse(rows[i].Trim(), NumberStyles.Integer, null, out var value) ? value : 0);
                 }
             }
 
@@ -546,11 +579,13 @@ namespace PolyphasePreviewer
 
         private void SetDefaultGammaLut()
         {
+            Properties.Settings.Default.LastGammaLut = null;
+
             for (var i = 0; i < 256; i++)
             {
-                gammaLut[0, i] = (byte) i; // default LUT
-                gammaLut[1, i] = (byte) i;
-                gammaLut[2, i] = (byte) i;
+                gammaLut[0, i] = (byte)i; // default LUT
+                gammaLut[1, i] = (byte)i;
+                gammaLut[2, i] = (byte)i;
             }
         }
 
@@ -570,7 +605,28 @@ namespace PolyphasePreviewer
 
         private void Form_FormClosing(object sender, FormClosingEventArgs e)
         {
+            Properties.Settings.Default.WindowState = WindowState;
+
+            switch (WindowState)
+            {
+                case FormWindowState.Normal:
+                    Properties.Settings.Default.Location = Location;
+                    Properties.Settings.Default.Size = Size;
+                    break;
+                default:
+                    Properties.Settings.Default.Location = RestoreBounds.Location;
+                    Properties.Settings.Default.Size = RestoreBounds.Size;
+                    break;
+            }
+
             Properties.Settings.Default.Save();
+        }
+
+        private void Form_Load(object sender, EventArgs e)
+        {
+            WindowState = Properties.Settings.Default.WindowState;
+            Location = Properties.Settings.Default.Location;
+            Size = Properties.Settings.Default.Size;
         }
 
         private void SavePreviewBtn_Click(object sender, EventArgs e)
