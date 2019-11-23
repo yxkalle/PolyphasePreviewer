@@ -42,9 +42,9 @@ namespace PolyphasePreviewer
             FilterComboBox.SelectedIndexChanged += FilterComboBox_SelectedIndexChanged;
             GammaLutComboBox.SelectedIndexChanged += GammaLutComboBox_SelectedIndexChanged;
 
+            LoadLastImage();
             LoadLastFilter();
             LoadLastGammaLut();
-            LoadLastImage();
 
             FilterTextBox.Select(FilterTextBox.TextLength, 0);
 
@@ -54,7 +54,11 @@ namespace PolyphasePreviewer
         private void LoadLastFilter()
         {
             var lastFilter = Properties.Settings.Default.LastFilter;
-            if (string.IsNullOrEmpty(lastFilter)) return;
+            if (string.IsNullOrEmpty(lastFilter))
+            {
+                FilterComboBox.SelectedIndex = 0;
+                return;
+            }
 
             foreach (var cbi in FilterComboBox.Items.Cast<ComboBoxItem>())
             {
@@ -137,7 +141,7 @@ namespace PolyphasePreviewer
             if (FilterComboBox.Items.Count == 0)
                 FilterComboBox.Items.Add("Sharp_Bilinear");
 
-            FilterComboBox.SelectedIndex = 0;
+            FilterComboBox.SelectedIndex = -1;
         }
 
         private void AddGammaLutsToComboBox()
