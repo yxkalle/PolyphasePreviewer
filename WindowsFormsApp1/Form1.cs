@@ -270,20 +270,25 @@ namespace PolyphasePreviewer
         private Bitmap ProcessImage(Bitmap sourceImage)
         {
             var outputImage = new Bitmap(sourceImage);
-            var sw = new Stopwatch();
 
+#if DEBUG
+            var sw = new Stopwatch();
             sw.Start();
+#endif
 
             if (!isDefaultGamma)
                 outputImage = ApplyGammaLut(sourceImage, gammaLut);
 
+#if DEBUG
             Console.WriteLine($@"Gamma correction took {sw.ElapsedMilliseconds} ms");
-
             sw.Restart();
+#endif
 
             outputImage = ScaleImage(outputImage);
 
+#if DEBUG
             Console.WriteLine($@"Scaling took {sw.ElapsedMilliseconds} ms");
+#endif
 
             return outputImage;
         }
