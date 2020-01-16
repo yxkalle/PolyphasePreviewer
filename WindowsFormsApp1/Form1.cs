@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
@@ -21,6 +22,7 @@ namespace PolyphasePreviewer
         private decimal scaleY;
 
         private bool isChanged;
+        private bool isDefaultGamma = true;
 
         private Bitmap image;
         private string imageName;
@@ -173,15 +175,15 @@ namespace PolyphasePreviewer
             if (!isChanged) return;
 
             Cursor = Cursors.WaitCursor;
-            PreviewPictureBox.Image = ScaleImage(image ?? Resource.testImage);
+            PreviewPictureBox.Image = ProcessImage(image ?? Resource.testImage);
             Cursor = Cursors.Default;
             isChanged = false;
         }
 
         private bool GetScale()
         {
-            var newScaleX = Math.Round(ScaleXUpDown.Value, ScaleXUpDown.DecimalPlaces);
-            var newScaleY = Math.Round(ScaleYUpDown.Value, ScaleYUpDown.DecimalPlaces);
+            decimal newScaleX = Math.Round(ScaleXUpDown.Value, ScaleXUpDown.DecimalPlaces),
+                    newScaleY = Math.Round(ScaleYUpDown.Value, ScaleYUpDown.DecimalPlaces);
 
             if (newScaleX == scaleX && newScaleY == scaleY)
                 return false;
@@ -265,10 +267,29 @@ namespace PolyphasePreviewer
             return !(CompareCoeffArrays(hCoeffs, oldH) && CompareCoeffArrays(vCoeffs, oldV));
         }
 
-        private Bitmap ScaleImage(Bitmap sourceImage)
+        private Bitmap ProcessImage(Bitmap sourceImage)
         {
-            var outputImage = ApplyGammaLut(sourceImage, gammaLut);
+            var outputImage = new Bitmap(sourceImage);
+            var sw = new Stopwatch();
 
+            sw.Start();
+
+            if (!isDefaultGamma)
+                outputImage = ApplyGammaLut(sourceImage, gammaLut);
+
+            Console.WriteLine($@"Gamma correction took {sw.ElapsedMilliseconds} ms");
+
+            sw.Restart();
+
+            outputImage = ScaleImage(outputImage);
+
+            Console.WriteLine($@"Scaling took {sw.ElapsedMilliseconds} ms");
+
+            return outputImage;
+        }
+
+        private Bitmap ScaleImage(Bitmap outputImage)
+        {
             outputImage.RotateFlip(RotateFlipType.Rotate90FlipX);
             outputImage = ScaleImage(outputImage, vCoeffs, scaleY);
             outputImage.RotateFlip(RotateFlipType.Rotate270FlipY);
@@ -277,105 +298,96 @@ namespace PolyphasePreviewer
             return outputImage;
         }
 
-        private static byte ClampToByte(int v)
+        private static byte ClampToByte(int val)
         {
-            if (v < 0) return 0;
-            if (v > 255) return 0xff;
-            return (byte)v;
+            if (val < 0) return 0;
+            if (val > 0xff) return 0xff;
+
+            return (byte)val;
         }
 
-        private static Bitmap ScaleImage(Bitmap sourceImage, Coeff[] coeffs, decimal scale)
+        unsafe private static Bitmap ScaleImage(Bitmap input, Coeff[] coeffs, decimal scale)
         {
-            decimal outputWidth = scale * sourceImage.Width;
-            decimal outputHeight = sourceImage.Height;
+            var output = new Bitmap((int) (scale * input.Width), input.Height);
 
-            var input = new Bitmap(sourceImage);
+            BitmapData srcData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb),
+                       dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
-            using (var output = new Bitmap((int)outputWidth, (int)outputHeight))
+            int* srcPointer = (int*) srcData.Scan0,
+                 dstPointer = (int*) dstData.Scan0;
+
+            int srcWidth = srcData.Width,
+                dstWidth = dstData.Width;
+
+            Parallel.For(0, dstData.Height, y =>
             {
-                var srcData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-                var dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+                var dstRowPointer = dstPointer + y * dstWidth;
+                var srcRowPointer = srcPointer + y * srcWidth;
 
-                unsafe
+                for (var x = 0; x < dstWidth; x++)
                 {
-                    var srcPointer = (int*)srcData.Scan0;
-                    if (srcPointer == null)
-                        throw new NullReferenceException();
+                    var sx = x / scale;
+                    var c = GetCoeff(coeffs, sx);
 
-                    var inputWidth = input.Width;
+                    int t0 = (int)(sx - 1.5m),
+                        t1 = (int)(sx - 0.5m),
+                        t2 = (int)(sx + 0.5m),
+                        t3 = (int)(sx + 1.5m);
 
-                    Parallel.For(0, dstData.Height, y =>
+                    if (t0 < 0) t0 = 0;
+                    if (t1 < 0) t1 = 0;
+                    if (t2 >= srcWidth) t2 = srcWidth - 1;
+                    if (t3 >= srcWidth) t3 = srcWidth - 1;
+
+                    var pixels = new[]
                     {
-                        var dstPointer = (int*)dstData.Scan0;
-                        dstPointer += y * dstData.Width;
+                        srcRowPointer[t0],
+                        srcRowPointer[t1],
+                        srcRowPointer[t2],
+                        srcRowPointer[t3]
+                    };
 
-                        for (var x = 0; x < dstData.Width; x++)
-                        {
-                            var xx = x / scale;
-                            var c = GetValueOf(coeffs, (xx + 0.5m) % 1.0m);
-
-                            var t0 = Max((int)(xx - 1.5m), 0);
-                            var t1 = Max((int)(xx - 0.5m), 0);
-                            var t2 = Min((int)(xx + 0.5m), inputWidth - 1);
-                            var t3 = Min((int)(xx + 1.5m), inputWidth - 1);
-
-                            var pixels = new[]
-                            {
-                                Color.FromArgb(srcPointer[t0 + y * inputWidth]),
-                                Color.FromArgb(srcPointer[t1 + y * inputWidth]),
-                                Color.FromArgb(srcPointer[t2 + y * inputWidth]),
-                                Color.FromArgb(srcPointer[t3 + y * inputWidth])
-                            };
-
-                            dstPointer[0] = c * pixels;
-                            dstPointer++;
-                        }
-                    });
+                    *dstRowPointer++ = c * pixels;
                 }
+            });
 
-                output.UnlockBits(dstData);
-                input.UnlockBits(srcData);
+            output.UnlockBits(dstData);
+            input.UnlockBits(srcData);
 
-                return new Bitmap(output);
-            }
+            return output;
         }
 
-        private static Bitmap ApplyGammaLut(Bitmap input, byte[,] gammaLut)
+        unsafe private static Bitmap ApplyGammaLut(Bitmap input, byte[,] gammaLut)
         {
             var inputWidth = input.Width;
             var inputHeight = input.Height;
 
-            using (var output = new Bitmap(inputWidth, inputHeight))
+            var output = new Bitmap(input);
+
+            var srcData = input.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            var dstData = output.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+            var srcPointer = (byte*) srcData.Scan0;
+            var dstPointer = (byte*) dstData.Scan0;
+
+            Parallel.For(0, inputHeight, y =>
             {
-                var srcData = input.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-                var dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+                var srcRowPointer = srcPointer + y * inputWidth * 4;
+                var dstRowPointer = dstPointer + y * inputWidth * 4;
 
-                unsafe
+                for (var x = 0; x < inputWidth; x++)
                 {
-                    var srcPointer = (int*)srcData.Scan0;
-                    if (srcPointer == null)
-                        throw new NullReferenceException();
-
-                    Parallel.For(0, dstData.Height, y =>
-                    {
-                        var dstPointer = (int*)dstData.Scan0;
-                        dstPointer += y * dstData.Width;
-
-                        for (var x = 0; x < dstData.Width; x++)
-                        {
-                            var c = Color.FromArgb(srcPointer[x + y * inputWidth]);
-
-                            dstPointer[0] = BitConverter.ToInt32(new[] { gammaLut[2, c.B], gammaLut[1, c.G], gammaLut[0, c.R], (byte)0xff }, 0);
-                            dstPointer++;
-                        }
-                    });
+                    *dstRowPointer++ = gammaLut[2, *srcRowPointer++];
+                    *dstRowPointer++ = gammaLut[1, *srcRowPointer++];
+                    *dstRowPointer++ = gammaLut[0, *srcRowPointer++];
+                    *dstRowPointer++ = *srcRowPointer++;
                 }
+            });
 
-                output.UnlockBits(dstData);
-                input.UnlockBits(srcData);
+            output.UnlockBits(dstData);
+            input.UnlockBits(srcData);
 
-                return new Bitmap(output);
-            }
+            return output;
         }
 
         private static bool CompareCoeffArrays(Coeff[] a, Coeff[] b)
@@ -396,22 +408,10 @@ namespace PolyphasePreviewer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Coeff GetValueOf(Coeff[] coeffs, decimal v)
+        private static Coeff GetCoeff(Coeff[] coeffs, decimal pos)
         {
-            var p = v * coeffs.Length;
-            return coeffs[(int)p];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int Min(int v1, int v2)
-        {
-            return v1 < v2 ? v1 : v2;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int Max(int v1, int v2)
-        {
-            return v1 > v2 ? v1 : v2;
+            var phase = coeffs.Length * ((pos + 0.5m) % 1.0m);
+            return coeffs[(int)phase];
         }
 
         private void Form_KeyDown(object sender, KeyEventArgs e)
@@ -549,10 +549,11 @@ namespace PolyphasePreviewer
             if (GammaLutComboBox.SelectedIndex == 0)
             {
                 SetDefaultGammaLut();
-                Properties.Settings.Default.LastGammaLut = null;
                 FilterTextBox_TextChanged(sender, e);
                 return;
             }
+
+            isDefaultGamma = false;
 
             if (!(GammaLutComboBox.SelectedItem is ComboBoxItem selectedItem && File.Exists(selectedItem.FilePath)))
                 return;
@@ -573,7 +574,10 @@ namespace PolyphasePreviewer
                 }
                 else
                 {
-                    gammaLut[0, i] = gammaLut[1, i] = gammaLut[2, i] = ClampToByte(byte.TryParse(rows[i].Trim(), NumberStyles.Integer, null, out var value) ? value : 0);
+                    var val = ClampToByte(byte.TryParse(rows[i].Trim(), NumberStyles.Integer, null, out var v) ? v : 0);
+                    gammaLut[0, i] = val;
+                    gammaLut[1, i] = val;
+                    gammaLut[2, i] = val;
                 }
             }
 
@@ -583,14 +587,8 @@ namespace PolyphasePreviewer
 
         private void SetDefaultGammaLut()
         {
+            isDefaultGamma = true;
             Properties.Settings.Default.LastGammaLut = null;
-
-            for (var i = 0; i < 256; i++)
-            {
-                gammaLut[0, i] = (byte)i; // default LUT
-                gammaLut[1, i] = (byte)i;
-                gammaLut[2, i] = (byte)i;
-            }
         }
 
         private void PreviewPictureBox_Click(object sender, EventArgs e)

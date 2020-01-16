@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -31,28 +30,33 @@ namespace PolyphasePreviewer
         {
         }
 
-        public static int operator *(Coeff c, Color[] p)
+        public static int operator *(Coeff c, int[] p)
         {
-            if (c == null)
-                return 0;
+            var bytes = new byte[4][]
+            {
+                BitConverter.GetBytes(p[0]),
+                BitConverter.GetBytes(p[1]),
+                BitConverter.GetBytes(p[2]),
+                BitConverter.GetBytes(p[3])
+            };
 
-            var r = Clamp(p[0].R * c.A + p[1].R * c.B + p[2].R * c.C + p[3].R * c.D);
-            var g = Clamp(p[0].G * c.A + p[1].G * c.B + p[2].G * c.C + p[3].G * c.D);
-            var b = Clamp(p[0].B * c.A + p[1].B * c.B + p[2].B * c.C + p[3].B * c.D);
+            var r = Clamp(bytes[0][2] * c.A + bytes[1][2] * c.B + bytes[2][2] * c.C + bytes[3][2] * c.D);
+            var g = Clamp(bytes[0][1] * c.A + bytes[1][1] * c.B + bytes[2][1] * c.C + bytes[3][1] * c.D);
+            var b = Clamp(bytes[0][0] * c.A + bytes[1][0] * c.B + bytes[2][0] * c.C + bytes[3][0] * c.D);
 
-            return BitConverter.ToInt32(new[] { b, g, r, (byte)0xff }, 0);
+            return 0xff << 24 | r << 16 | g << 8 | b;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte Clamp(int v)
+        private static byte Clamp(int val)
         {
-            if (v < 0)
+            if (val < 0)
                 return 0;
 
-            if (v >= 0x8000)
+            if (val >= 0x8000)
                 return 0xff;
 
-            return (byte)(v >> 7);
+            return (byte)(val >> 7);
         }
 
         public bool Equals(Coeff other)
