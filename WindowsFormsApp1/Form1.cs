@@ -1,18 +1,17 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PolyphasePreviewer
 {
-    public partial class Form
+    public unsafe partial class Form
     {
         private const int CoeffsLength = 16;
 
@@ -177,6 +176,7 @@ namespace PolyphasePreviewer
             Cursor = Cursors.WaitCursor;
             PreviewPictureBox.Image = ProcessImage(image ?? Resource.testImage);
             Cursor = Cursors.Default;
+
             isChanged = false;
         }
 
@@ -225,7 +225,7 @@ namespace PolyphasePreviewer
 
                 if (numbers.Length == 4)
                 {
-                    var newCoeff = new Coeff(numbers);
+                    var newCoeff = new Coeff(numbers[0], numbers[1], numbers[2], numbers[3]);
 
                     if (newCoeff.Sum() != 128)
                         numberOfWarnings++;
@@ -293,16 +293,6 @@ namespace PolyphasePreviewer
             return outputImage;
         }
 
-        private Bitmap ScaleImage(Bitmap outputImage)
-        {
-            outputImage.RotateFlip(RotateFlipType.Rotate90FlipX);
-            outputImage = ScaleImage(outputImage, vCoeffs, scaleY);
-            outputImage.RotateFlip(RotateFlipType.Rotate270FlipY);
-            outputImage = ScaleImage(outputImage, hCoeffs, scaleX);
-
-            return outputImage;
-        }
-
         private static byte ClampToByte(int val)
         {
             if (val < 0) return 0;
@@ -311,81 +301,62 @@ namespace PolyphasePreviewer
             return (byte)val;
         }
 
-        unsafe private static Bitmap ScaleImage(Bitmap input, Coeff[] coeffs, decimal scale)
+        [DllImport("PolyphaseScaler_x86.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "Scale")]
+        private static extern void Scale_x86(int* input, int* output, int width, int height, short* hCoeffs, short* vCoeffs, float scaleX, float scaleY);
+
+        [DllImport("PolyphaseScaler_x64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "Scale")]
+        private static extern void Scale_x64(int* input, int* output, int width, int height, short* hCoeffs, short* vCoeffs, float scaleX, float scaleY);
+
+        private Bitmap ScaleImage(Bitmap input)
         {
-            var output = new Bitmap((int) (scale * input.Width), input.Height);
-
-            BitmapData srcData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb),
-                       dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-            int* srcPointer = (int*) srcData.Scan0,
-                 dstPointer = (int*) dstData.Scan0;
-
-            int srcWidth = srcData.Width,
-                dstWidth = dstData.Width;
-
-            Parallel.For(0, dstData.Height, y =>
+            fixed (short* hCPtr = hCoeffs.SelectMany(c => c).ToArray(), vCPtr = vCoeffs.SelectMany(c => c).ToArray())
             {
-                var dstRowPointer = dstPointer + y * dstWidth;
-                var srcRowPointer = srcPointer + y * srcWidth;
+                var output = new Bitmap((int) (scaleX * input.Width), (int) (scaleY * input.Height));
 
-                for (var x = 0; x < dstWidth; x++)
-                {
-                    var sx = x / scale;
-                    var c = GetCoeff(coeffs, sx);
+                BitmapData srcData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height),
+                        ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb),
+                          dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), 
+                        ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
-                    int t0 = (int)(sx - 1.5m),
-                        t1 = (int)(sx - 0.5m),
-                        t2 = (int)(sx + 0.5m),
-                        t3 = (int)(sx + 1.5m);
+                int* srcPointer = (int*) srcData.Scan0,
+                     dstPointer = (int*) dstData.Scan0;
 
-                    if (t0 < 0) t0 = 0;
-                    if (t1 < 0) t1 = 0;
-                    if (t2 >= srcWidth) t2 = srcWidth - 1;
-                    if (t3 >= srcWidth) t3 = srcWidth - 1;
+                if (Environment.Is64BitProcess)
+                    Scale_x64(srcPointer, dstPointer, input.Width, input.Height, hCPtr, vCPtr, (float) scaleX,
+                        (float) scaleY);
+                else
+                    Scale_x86(srcPointer, dstPointer, input.Width, input.Height, hCPtr, vCPtr, (float)scaleX,
+                        (float)scaleY);
 
-                    var pixels = new[]
-                    {
-                        srcRowPointer[t0],
-                        srcRowPointer[t1],
-                        srcRowPointer[t2],
-                        srcRowPointer[t3]
-                    };
+                input.UnlockBits(srcData);
+                output.UnlockBits(dstData);
 
-                    *dstRowPointer++ = c * pixels;
-                }
-            });
-
-            output.UnlockBits(dstData);
-            input.UnlockBits(srcData);
-
-            return output;
+                return output;
+            }
         }
 
-        unsafe private static Bitmap ApplyGammaLut(Bitmap input, byte[,] gammaLut)
+        private static Bitmap ApplyGammaLut(Bitmap input, byte[,] gammaLut)
         {
             var inputWidth = input.Width;
             var inputHeight = input.Height;
 
             var output = new Bitmap(input);
 
-            var srcData = input.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-            var dstData = output.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            BitmapData srcData = input.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb),
+                       dstData = output.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
-            var srcPointer = (byte*) srcData.Scan0;
-            var dstPointer = (byte*) dstData.Scan0;
+            Pixel* srcPointer = (Pixel*) srcData.Scan0,
+                   dstPointer = (Pixel*) dstData.Scan0;
 
             Parallel.For(0, inputHeight, y =>
             {
-                var srcRowPointer = srcPointer + y * inputWidth * 4;
-                var dstRowPointer = dstPointer + y * inputWidth * 4;
+                Pixel* srcRowPointer = srcPointer + y * inputWidth,
+                       dstRowPointer = dstPointer + y * inputWidth;
 
                 for (var x = 0; x < inputWidth; x++)
                 {
-                    *dstRowPointer++ = gammaLut[2, *srcRowPointer++];
-                    *dstRowPointer++ = gammaLut[1, *srcRowPointer++];
-                    *dstRowPointer++ = gammaLut[0, *srcRowPointer++];
-                    *dstRowPointer++ = *srcRowPointer++;
+                    Pixel srcPixel = *srcRowPointer++;
+                    *dstRowPointer++ = new Pixel(gammaLut[2, srcPixel.R], gammaLut[1, srcPixel.G], gammaLut[0, srcPixel.B]);
                 }
             });
 
@@ -405,18 +376,11 @@ namespace PolyphasePreviewer
 
             for (var i = 0; i < a.Length; i++)
             {
-                if (a[i]?.Equals(b[i]) != true)
+                if (a[i].Equals(b[i]) != true)
                     return false;
             }
 
             return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Coeff GetCoeff(Coeff[] coeffs, decimal pos)
-        {
-            var phase = coeffs.Length * ((pos + 0.5m) % 1.0m);
-            return coeffs[(int)phase];
         }
 
         private void Form_KeyDown(object sender, KeyEventArgs e)
@@ -474,8 +438,6 @@ namespace PolyphasePreviewer
 
             Properties.Settings.Default.AutomaticRedraw = AutomaticRedrawChkBox.Checked;
         }
-
-
 
         private void FilterTextBox_TextChanged(object sender, EventArgs e)
         {

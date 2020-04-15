@@ -74,7 +74,7 @@ namespace PolyphasePreviewer
             // 
             // RedrawTimer
             // 
-            this.RedrawTimer.Interval = 500;
+            this.RedrawTimer.Interval = 50;
             this.RedrawTimer.Tick += new System.EventHandler(this.RedrawTimer_Tick);
             // 
             // label1
