@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+#if DEBUG
+using System.Diagnostics;
+#endif
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
@@ -99,7 +103,7 @@ namespace PolyphasePreviewer
                 using (var stream = new FileStream(lastImage, FileMode.Open, FileAccess.Read))
                     image = new Bitmap(stream);
 
-                imageName = Path.GetFileNameWithoutExtension(OpenImageDialog.FileName)?.Trim();
+                imageName = Path.GetFileNameWithoutExtension(lastImage)?.Trim();
             }
             catch
             {
@@ -132,17 +136,40 @@ namespace PolyphasePreviewer
             if (!Directory.Exists(filtersPath))
                 filtersPath = ".";
 
+            filtersPath = Path.GetFullPath(filtersPath);
+
             FilterComboBox.Items.Clear();
-            FilterComboBox.Items.AddRange(
-              Directory.GetFiles(filtersPath, "*.txt")
-              .Select(f =>
-              (object)new ComboBoxItem(Path.GetFileNameWithoutExtension(f), Path.GetFullPath(f)))
-              .ToArray());
+
+            var filters = GetFilesAsComboBoxItems(filtersPath);
+
+            FilterComboBox.Items.AddRange(filters);
 
             if (FilterComboBox.Items.Count == 0)
-                FilterComboBox.Items.Add("Sharp_Bilinear");
+            {
+                const string defaultName = "Sharp_Bilinear";
+                FilterComboBox.Items.Add(new ComboBoxItem(defaultName, Path.Combine(filtersPath, defaultName, ".txt")));
+            }
 
-            FilterComboBox.SelectedIndex = -1;
+            FilterComboBox.SelectedIndex = 0;
+        }
+
+        private static object[] GetFilesAsComboBoxItems(string path, string searchPattern = "*.txt")
+        {
+            return Directory.GetFiles(path, searchPattern, SearchOption.AllDirectories)
+                .Select(f =>
+                {
+                    var currentDir = Path.GetDirectoryName(f) ?? path;
+
+                    var isRoot = currentDir == path;
+
+                    return (object) new ComboBoxItem(
+                        (isRoot
+                            ? ""
+                            : currentDir.Substring(path.Length + 1).Replace('\\', '/') + '/') +
+                        Path.GetFileNameWithoutExtension(f),
+                        f);
+                })
+                .ToArray();
         }
 
         private void AddGammaLutsToComboBox()
@@ -156,11 +183,9 @@ namespace PolyphasePreviewer
             if (!Directory.Exists(gammaLutsPath))
                 return;
 
-            GammaLutComboBox.Items.AddRange(
-                Directory.GetFiles(gammaLutsPath, "*.txt")
-                    .Select(g =>
-                        (object)new ComboBoxItem(Path.GetFileNameWithoutExtension(g), Path.GetFullPath(g)))
-                    .ToArray());
+            var luts = GetFilesAsComboBoxItems(gammaLutsPath);
+
+            GammaLutComboBox.Items.AddRange(luts);
         }
 
         private void UpdateImage()
@@ -556,6 +581,7 @@ namespace PolyphasePreviewer
         {
             isDefaultGamma = true;
             Properties.Settings.Default.LastGammaLut = null;
+            GammaLutComboBox.SelectedIndex = 0;
         }
 
         private void PreviewPictureBox_Click(object sender, EventArgs e)
@@ -600,7 +626,7 @@ namespace PolyphasePreviewer
 
         private void SavePreviewBtn_Click(object sender, EventArgs e)
         {
-            var fileName = string.IsNullOrEmpty(imageName) ? FilterComboBox.Text : $"{imageName}_{FilterComboBox.Text}";
+            var fileName = string.IsNullOrEmpty(imageName) ? FilterComboBox.Text : $"{imageName}_{FilterComboBox.Text.Replace('\\', '_')}";
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Previews");
 
             if (!Directory.Exists(directory))

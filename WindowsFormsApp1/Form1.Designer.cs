@@ -124,6 +124,8 @@ namespace PolyphasePreviewer
             // 
             // FilterComboBox
             // 
+            this.FilterComboBox.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
+            this.FilterComboBox.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             this.FilterComboBox.Location = new System.Drawing.Point(13, 13);
             this.FilterComboBox.Name = "FilterComboBox";
             this.FilterComboBox.Size = new System.Drawing.Size(368, 21);
@@ -162,7 +164,8 @@ namespace PolyphasePreviewer
             // GammaLutComboBox
             // 
             this.GammaLutComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.GammaLutComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.GammaLutComboBox.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
+            this.GammaLutComboBox.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             this.GammaLutComboBox.Location = new System.Drawing.Point(313, 673);
             this.GammaLutComboBox.Name = "GammaLutComboBox";
             this.GammaLutComboBox.Size = new System.Drawing.Size(149, 21);
