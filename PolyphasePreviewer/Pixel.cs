@@ -2,20 +2,22 @@
 
 namespace PolyphasePreviewer
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit)]
     public struct Pixel
     {
+        [FieldOffset(0)]
         public byte B;
+
+        [FieldOffset(1)]
         public byte G;
+
+        [FieldOffset(2)]
         public byte R;
+
+        [FieldOffset(3)]
         public byte A;
 
-        public Pixel(byte r, byte g, byte b)
-        {
-            R = r;
-            G = g;
-            B = b;
-            A = 0xff;
-        }
+        [FieldOffset(0)]
+        public int Argb;
     }
 }

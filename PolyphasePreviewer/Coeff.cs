@@ -6,14 +6,14 @@ using System.Runtime.InteropServices;
 namespace PolyphasePreviewer
 {
     [StructLayout(LayoutKind.Sequential)]
-    internal struct Coeff : IEquatable<Coeff>, IEnumerable<short>
+    internal struct Coeff : IEquatable<Coeff>, IEnumerable<int>
     {
-        public short A;
-        public short B;
-        public short C;
-        public short D;
+        public int A;
+        public int B;
+        public int C;
+        public int D;
 
-        public Coeff(short a, short b, short c, short d)
+        public Coeff(int a, int b, int c, int d)
         {
             A = a;
             B = b;
@@ -30,7 +30,7 @@ namespace PolyphasePreviewer
               D == other.D;
         }
 
-        public IEnumerator<short> GetEnumerator()
+        public IEnumerator<int> GetEnumerator()
         {
             yield return A;
             yield return B;

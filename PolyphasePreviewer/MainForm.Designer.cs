@@ -1,8 +1,6 @@
-﻿using System.Windows.Forms.VisualStyles;
-
-namespace PolyphasePreviewer
+﻿namespace PolyphasePreviewer
 {
-    partial class Form: System.Windows.Forms.Form
+    partial class MainForm : System.Windows.Forms.Form
     {
         /// <summary>
         /// Required designer variable.
@@ -31,7 +29,7 @@ namespace PolyphasePreviewer
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.FilterTextBox = new System.Windows.Forms.TextBox();
             this.RedrawTimer = new System.Windows.Forms.Timer(this.components);
             this.label1 = new System.Windows.Forms.Label();
@@ -46,10 +44,11 @@ namespace PolyphasePreviewer
             this.GammaLutComboBox = new System.Windows.Forms.ComboBox();
             this.PreviewPictureBox = new System.Windows.Forms.PictureBox();
             this.bindingSource1 = new System.Windows.Forms.BindingSource(this.components);
+            this.ErrorsAndWarningsLabel = new System.Windows.Forms.Label();
+            this.SnesModeChkBox = new System.Windows.Forms.CheckBox();
             this.AutomaticRedrawChkBox = new System.Windows.Forms.CheckBox();
             this.ScaleYUpDown = new System.Windows.Forms.NumericUpDown();
             this.ScaleXUpDown = new System.Windows.Forms.NumericUpDown();
-            this.ErrorsAndWarningsLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.PreviewPictureBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ScaleYUpDown)).BeginInit();
@@ -104,7 +103,7 @@ namespace PolyphasePreviewer
             this.loadImageBtn.Name = "loadImageBtn";
             this.loadImageBtn.Size = new System.Drawing.Size(100, 23);
             this.loadImageBtn.TabIndex = 6;
-            this.loadImageBtn.Text = "Load Image";
+            this.loadImageBtn.Text = "&Load Image";
             this.loadImageBtn.Click += new System.EventHandler(this.LoadImageBtn_Click);
             // 
             // OpenImageDialog
@@ -119,7 +118,7 @@ namespace PolyphasePreviewer
             this.updateBtn.Name = "updateBtn";
             this.updateBtn.Size = new System.Drawing.Size(100, 23);
             this.updateBtn.TabIndex = 11;
-            this.updateBtn.Text = "Update";
+            this.updateBtn.Text = "&Update";
             this.updateBtn.Click += new System.EventHandler(this.UpdateBtn_Click);
             // 
             // FilterComboBox
@@ -148,7 +147,7 @@ namespace PolyphasePreviewer
             this.savePreviewBtn.Name = "savePreviewBtn";
             this.savePreviewBtn.Size = new System.Drawing.Size(108, 23);
             this.savePreviewBtn.TabIndex = 14;
-            this.savePreviewBtn.Text = "Save Preview";
+            this.savePreviewBtn.Text = "Save &Preview";
             this.savePreviewBtn.Click += new System.EventHandler(this.SavePreviewBtn_Click);
             // 
             // label3
@@ -186,6 +185,29 @@ namespace PolyphasePreviewer
             this.PreviewPictureBox.TabStop = false;
             this.PreviewPictureBox.Click += new System.EventHandler(this.PreviewPictureBox_Click);
             // 
+            // ErrorsAndWarningsLabel
+            // 
+            this.ErrorsAndWarningsLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.ErrorsAndWarningsLabel.AutoSize = true;
+            this.ErrorsAndWarningsLabel.ForeColor = System.Drawing.Color.Red;
+            this.ErrorsAndWarningsLabel.Location = new System.Drawing.Point(12, 648);
+            this.ErrorsAndWarningsLabel.Name = "ErrorsAndWarningsLabel";
+            this.ErrorsAndWarningsLabel.Size = new System.Drawing.Size(0, 13);
+            this.ErrorsAndWarningsLabel.TabIndex = 19;
+            // 
+            // SnesModeChkBox
+            // 
+            this.SnesModeChkBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.SnesModeChkBox.AutoSize = true;
+            this.SnesModeChkBox.Checked = global::PolyphasePreviewer.Properties.Settings.Default.SnesMode;
+            this.SnesModeChkBox.DataBindings.Add(new System.Windows.Forms.Binding("Checked", global::PolyphasePreviewer.Properties.Settings.Default, "SnesMode", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.SnesModeChkBox.Location = new System.Drawing.Point(118, 648);
+            this.SnesModeChkBox.Name = "SnesModeChkBox";
+            this.SnesModeChkBox.Size = new System.Drawing.Size(95, 17);
+            this.SnesModeChkBox.TabIndex = 20;
+            this.SnesModeChkBox.Text = "\"SNES &Mode\"";
+            this.SnesModeChkBox.CheckedChanged += new System.EventHandler(this.SnesModeChkBox_CheckedChanged);
+            // 
             // AutomaticRedrawChkBox
             // 
             this.AutomaticRedrawChkBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
@@ -197,7 +219,7 @@ namespace PolyphasePreviewer
             this.AutomaticRedrawChkBox.Name = "AutomaticRedrawChkBox";
             this.AutomaticRedrawChkBox.Size = new System.Drawing.Size(113, 17);
             this.AutomaticRedrawChkBox.TabIndex = 10;
-            this.AutomaticRedrawChkBox.Text = "Automatic Redraw";
+            this.AutomaticRedrawChkBox.Text = "&Automatic Redraw";
             this.AutomaticRedrawChkBox.CheckedChanged += new System.EventHandler(this.AutomaticRedrawChkBox_CheckedChanged);
             // 
             // ScaleYUpDown
@@ -254,21 +276,12 @@ namespace PolyphasePreviewer
             this.ScaleXUpDown.Value = global::PolyphasePreviewer.Properties.Settings.Default.ScaleX;
             this.ScaleXUpDown.ValueChanged += new System.EventHandler(this.FilterTextBox_TextChanged);
             // 
-            // ErrorsAndWarningsLabel
-            // 
-            this.ErrorsAndWarningsLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.ErrorsAndWarningsLabel.AutoSize = true;
-            this.ErrorsAndWarningsLabel.ForeColor = System.Drawing.Color.Red;
-            this.ErrorsAndWarningsLabel.Location = new System.Drawing.Point(12, 642);
-            this.ErrorsAndWarningsLabel.Name = "ErrorsAndWarningsLabel";
-            this.ErrorsAndWarningsLabel.Size = new System.Drawing.Size(0, 13);
-            this.ErrorsAndWarningsLabel.TabIndex = 19;
-            // 
-            // Form
+            // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1200, 735);
+            this.Controls.Add(this.SnesModeChkBox);
             this.Controls.Add(this.ErrorsAndWarningsLabel);
             this.Controls.Add(this.GammaLutComboBox);
             this.Controls.Add(this.label3);
@@ -284,8 +297,8 @@ namespace PolyphasePreviewer
             this.Controls.Add(this.ScaleXUpDown);
             this.Controls.Add(this.PreviewPictureBox);
             this.Controls.Add(this.FilterTextBox);
-            this.Name = "Form";
-            this.Text = "MiSTer Polyphase Previewer";
+            this.Name = "MainForm";
+            this.Text = "Polyphase Previewer";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form_FormClosing);
             this.Load += new System.EventHandler(this.Form_Load);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form_KeyDown);
@@ -317,6 +330,7 @@ namespace PolyphasePreviewer
         private System.Windows.Forms.ComboBox GammaLutComboBox;
         private System.Windows.Forms.BindingSource bindingSource1;
         private System.Windows.Forms.Label ErrorsAndWarningsLabel;
+        private System.Windows.Forms.CheckBox SnesModeChkBox;
     }
 }
 

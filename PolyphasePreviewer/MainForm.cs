@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 #if DEBUG
 using System.Diagnostics;
 #endif
@@ -15,7 +14,7 @@ using System.Windows.Forms;
 
 namespace PolyphasePreviewer
 {
-    public unsafe partial class Form
+    public partial class MainForm
     {
         private const int CoeffsLength = 16;
 
@@ -35,7 +34,7 @@ namespace PolyphasePreviewer
 
         private readonly byte[,] gammaLut = new byte[3, 256];
 
-        public Form()
+        public MainForm()
         {
             InitializeComponent();
 
@@ -103,7 +102,7 @@ namespace PolyphasePreviewer
                 using (var stream = new FileStream(lastImage, FileMode.Open, FileAccess.Read))
                     image = new Bitmap(stream);
 
-                imageName = Path.GetFileNameWithoutExtension(lastImage)?.Trim();
+                imageName = Path.GetFileNameWithoutExtension(lastImage).Trim();
             }
             catch
             {
@@ -114,10 +113,10 @@ namespace PolyphasePreviewer
 
         private class ComboBoxItem
         {
-            public ComboBoxItem(string label, string filePath)
+            public ComboBoxItem(string label, string path)
             {
                 this.label = label;
-                FilePath = filePath;
+                FilePath = path;
             }
 
             public override string ToString()
@@ -162,7 +161,7 @@ namespace PolyphasePreviewer
 
                     var isRoot = currentDir == path;
 
-                    return (object) new ComboBoxItem(
+                    return (object)new ComboBoxItem(
                         (isRoot
                             ? ""
                             : currentDir.Substring(path.Length + 1).Replace('\\', '/') + '/') +
@@ -235,8 +234,8 @@ namespace PolyphasePreviewer
             vCoeffs = new Coeff[CoeffsLength];
 
             var numberLines = text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-              .Select(l => l.Trim()).Where(tl => tl.Length > 0 && tl[0] != '#')
-              .ToArray(); // remove comments
+                .Select(l => l.Trim()).Where(tl => tl.Length > 0 && tl[0] != '#')
+                .ToArray();
 
             short sn = 0;
             var lineIndex = 0;
@@ -244,9 +243,9 @@ namespace PolyphasePreviewer
             foreach (var l in numberLines)
             {
                 var numbers = l.Split(new[] { ',' }, 4)
-                  .Where(n => short.TryParse(n, out sn))
-                  .Select(n => sn)
-                  .ToArray();
+                    .Where(n => short.TryParse(n, out sn))
+                    .Select(n => sn)
+                    .ToArray();
 
                 if (numbers.Length == 4)
                 {
@@ -294,25 +293,32 @@ namespace PolyphasePreviewer
 
         private Bitmap ProcessImage(Bitmap sourceImage)
         {
-            var outputImage = new Bitmap(sourceImage);
+            Bitmap outputImage;
 
 #if DEBUG
             var sw = new Stopwatch();
             sw.Start();
 #endif
-
-            if (!isDefaultGamma)
+            if (isDefaultGamma)
+                outputImage = new Bitmap(sourceImage);
+            else
                 outputImage = ApplyGammaLut(sourceImage, gammaLut);
 
 #if DEBUG
-            Console.WriteLine($@"Gamma correction took {sw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($@"Gamma correction took {sw.ElapsedMilliseconds} ms");
             sw.Restart();
 #endif
+            if (SnesModeChkBox.Checked)
+                outputImage = DoubleHorizontalResolution(outputImage);
 
+#if DEBUG
+            Debug.WriteLine($@"Doubling horizontal resolution took {sw.ElapsedMilliseconds} ms");
+            sw.Restart();
+#endif
             outputImage = ScaleImage(outputImage);
 
 #if DEBUG
-            Console.WriteLine($@"Scaling took {sw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($@"Scaling took {sw.ElapsedMilliseconds} ms");
 #endif
 
             return outputImage;
@@ -327,36 +333,54 @@ namespace PolyphasePreviewer
         }
 
         [DllImport("PolyphaseScaler_x86.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "Scale")]
-        private static extern void Scale_x86(int* input, int* output, int width, int height, short* hCoeffs, short* vCoeffs, float scaleX, float scaleY);
+        private static extern void Scale_x86(IntPtr input, IntPtr output, int width, int height, IntPtr hCoeffs, IntPtr vCoeffs, float scaleX, float scaleY);
 
         [DllImport("PolyphaseScaler_x64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "Scale")]
-        private static extern void Scale_x64(int* input, int* output, int width, int height, short* hCoeffs, short* vCoeffs, float scaleX, float scaleY);
+        private static extern void Scale_x64(IntPtr input, IntPtr output, int width, int height, IntPtr hCoeffs, IntPtr vCoeffs, float scaleX, float scaleY);
 
         private Bitmap ScaleImage(Bitmap input)
         {
-            fixed (short* hCPtr = hCoeffs.SelectMany(c => c).ToArray(), vCPtr = vCoeffs.SelectMany(c => c).ToArray())
+            var xF = (float)scaleX;
+            var yF = (float)scaleY;
+
+            if (SnesModeChkBox.Checked)
+                xF /= 2f;
+
+            GCHandle hCHandle = GCHandle.Alloc(hCoeffs.SelectMany(c => c).ToArray(), GCHandleType.Pinned),
+                     vCHandle = GCHandle.Alloc(vCoeffs.SelectMany(c => c).ToArray(), GCHandleType.Pinned);
+
+            try
             {
-                var output = new Bitmap((int) (scaleX * input.Width), (int) (scaleY * input.Height));
+                IntPtr hCPtr = hCHandle.AddrOfPinnedObject(),
+                       vCPtr = vCHandle.AddrOfPinnedObject();
+
+                var output = new Bitmap((int)(xF * input.Width), (int)(yF * input.Height));
 
                 BitmapData srcData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height),
                         ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb),
-                          dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), 
+                          dstData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height),
                         ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
-                int* srcPointer = (int*) srcData.Scan0,
-                     dstPointer = (int*) dstData.Scan0;
+                IntPtr srcPointer = srcData.Scan0,
+                       dstPointer = dstData.Scan0;
 
                 if (Environment.Is64BitProcess)
-                    Scale_x64(srcPointer, dstPointer, input.Width, input.Height, hCPtr, vCPtr, (float) scaleX,
-                        (float) scaleY);
+                    Scale_x64(srcPointer, dstPointer, input.Width, input.Height, hCPtr, vCPtr, xF, yF);
                 else
-                    Scale_x86(srcPointer, dstPointer, input.Width, input.Height, hCPtr, vCPtr, (float)scaleX,
-                        (float)scaleY);
+                    Scale_x86(srcPointer, dstPointer, input.Width, input.Height, hCPtr, vCPtr, xF, yF);
 
                 input.UnlockBits(srcData);
                 output.UnlockBits(dstData);
 
                 return output;
+            }
+            finally
+            {
+                if (hCHandle.IsAllocated)
+                    hCHandle.Free();
+
+                if (vCHandle.IsAllocated)
+                    vCHandle.Free();
             }
         }
 
@@ -370,18 +394,65 @@ namespace PolyphasePreviewer
             BitmapData srcData = input.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb),
                        dstData = output.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
-            Pixel* srcPointer = (Pixel*) srcData.Scan0,
-                   dstPointer = (Pixel*) dstData.Scan0;
+            IntPtr srcPointer = srcData.Scan0,
+                   dstPointer = dstData.Scan0;
 
             Parallel.For(0, inputHeight, y =>
             {
-                Pixel* srcRowPointer = srcPointer + y * inputWidth,
-                       dstRowPointer = dstPointer + y * inputWidth;
+                IntPtr srcRowPointer = srcPointer + (y * inputWidth * sizeof(int)),
+                       dstRowPointer = dstPointer + (y * inputWidth * sizeof(int));
 
                 for (var x = 0; x < inputWidth; x++)
                 {
-                    Pixel srcPixel = *srcRowPointer++;
-                    *dstRowPointer++ = new Pixel(gammaLut[2, srcPixel.R], gammaLut[1, srcPixel.G], gammaLut[0, srcPixel.B]);
+                    var srcPixel = new Pixel { Argb = Marshal.ReadInt32(srcRowPointer) };
+                    var dstPixel = new Pixel
+                    {
+                        R = gammaLut[2, srcPixel.R],
+                        G = gammaLut[1, srcPixel.G],
+                        B = gammaLut[0, srcPixel.B],
+                        A = 0xff
+                    };
+
+                    Marshal.WriteInt32(dstRowPointer, dstPixel.Argb);
+
+                    srcRowPointer += sizeof(int);
+                    dstRowPointer += sizeof(int);
+                }
+            });
+
+            output.UnlockBits(dstData);
+            input.UnlockBits(srcData);
+
+            return output;
+        }
+
+        private static Bitmap DoubleHorizontalResolution(Bitmap input)
+        {
+            var inputWidth = input.Width;
+            var inputHeight = input.Height;
+
+            var output = new Bitmap(inputWidth * 2, inputHeight);
+
+            BitmapData srcData = input.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb),
+                       dstData = output.LockBits(new Rectangle(0, 0, inputWidth, inputHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+            IntPtr srcPointer = srcData.Scan0,
+                   dstPointer = dstData.Scan0;
+
+            Parallel.For(0, inputHeight, y =>
+            {
+                IntPtr srcRowPointer = srcPointer + (y * inputWidth * sizeof(int)),
+                       dstRowPointer = dstPointer + (y * inputWidth * sizeof(int) * 2);
+
+                for (var x = 0; x < inputWidth; x++)
+                {
+                    var srcPixel = Marshal.ReadInt32(srcRowPointer);
+
+                    Marshal.WriteInt32(dstRowPointer, srcPixel);
+                    dstRowPointer += sizeof(int);
+                    Marshal.WriteInt32(dstRowPointer, srcPixel);
+                    dstRowPointer += sizeof(int);
+                    srcRowPointer += sizeof(int);
                 }
             });
 
@@ -624,9 +695,20 @@ namespace PolyphasePreviewer
             Size = Properties.Settings.Default.Size;
         }
 
+        private void SnesModeChkBox_CheckedChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.SnesMode = SnesModeChkBox.Checked;
+
+            if (AutomaticRedrawChkBox.Checked)
+            {
+                isChanged = true;
+                UpdateImage();
+            }
+        }
+
         private void SavePreviewBtn_Click(object sender, EventArgs e)
         {
-            var fileName = string.IsNullOrEmpty(imageName) ? FilterComboBox.Text : $"{imageName}_{FilterComboBox.Text.Replace('\\', '_')}";
+            var fileName = string.IsNullOrEmpty(imageName) ? FilterComboBox.Text : $"{imageName}_{FilterComboBox.Text.Replace('/', '_')}";
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Previews");
 
             if (!Directory.Exists(directory))
